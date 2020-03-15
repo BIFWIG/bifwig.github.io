@@ -1,0 +1,796 @@
+<!DOCTYPE HTML>
+<html lang="zh-CN">
+
+
+<head><meta name="generator" content="Hexo 3.8.0">
+    <meta charset="utf-8">
+    <meta name="keywords" content="Java8 parallelStream 基础介绍, BIF&#39;s Notes">
+    <meta name="description" content>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="renderer" content="webkit|ie-stand|ie-comp">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="format-detection" content="telephone=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <!-- Global site tag (gtag.js) - Google Analytics -->
+
+<script async src="https://www.googletagmanager.com/gtag/js?id=UA-80069723-1"></script>
+<script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag() {
+        dataLayer.push(arguments);
+    }
+
+    gtag('js', new Date());
+    gtag('config', 'UA-80069723-1');
+</script>
+
+
+    <title>Java8 parallelStream 基础介绍 | BIF&#39;s Notes</title>
+    <link rel="icon" type="image/png" href="/favicon.png">
+
+    <link rel="stylesheet" type="text/css" href="/libs/awesome/css/all.css">
+    <link rel="stylesheet" type="text/css" href="/libs/materialize/materialize.min.css">
+    <link rel="stylesheet" type="text/css" href="/libs/aos/aos.css">
+    <link rel="stylesheet" type="text/css" href="/libs/animate/animate.min.css">
+    <link rel="stylesheet" type="text/css" href="/libs/lightGallery/css/lightgallery.min.css">
+    <link rel="stylesheet" type="text/css" href="/css/matery.css">
+    <link rel="stylesheet" type="text/css" href="/css/my.css">
+
+    <script src="/libs/jquery/jquery.min.js"></script>
+    
+<link rel="stylesheet" href="/css/prism-tomorrow.css" type="text/css"></head>
+
+
+<body>
+    <header class="navbar-fixed">
+    <nav id="headNav" class="bg-color nav-transparent">
+        <div id="navContainer" class="nav-wrapper container">
+            <div class="brand-logo">
+                <a href="/" class="waves-effect waves-light">
+                    
+                    <img src="/medias/logo.png" class="logo-img" alt="LOGO">
+                    
+                    <span class="logo-span">BIF's Notes</span>
+                </a>
+            </div>
+            
+
+<a href="#" data-target="mobile-nav" class="sidenav-trigger button-collapse"><i class="fas fa-bars"></i></a>
+<ul class="right nav-menu">
+  
+  <li class="hide-on-med-and-down nav-item">
+    
+    <a href="/" class="waves-effect waves-light">
+      
+      <i class="fas fa-home" style="zoom: 0.6;"></i>
+      
+      <span>首页</span>
+    </a>
+    
+  </li>
+  
+  <li class="hide-on-med-and-down nav-item">
+    
+    <a href="/tags" class="waves-effect waves-light">
+      
+      <i class="fas fa-tags" style="zoom: 0.6;"></i>
+      
+      <span>标签</span>
+    </a>
+    
+  </li>
+  
+  <li class="hide-on-med-and-down nav-item">
+    
+    <a href="/categories" class="waves-effect waves-light">
+      
+      <i class="fas fa-bookmark" style="zoom: 0.6;"></i>
+      
+      <span>分类</span>
+    </a>
+    
+  </li>
+  
+  <li class="hide-on-med-and-down nav-item">
+    
+    <a href="/archives" class="waves-effect waves-light">
+      
+      <i class="fas fa-archive" style="zoom: 0.6;"></i>
+      
+      <span>归档</span>
+    </a>
+    
+  </li>
+  
+  <li class="hide-on-med-and-down nav-item">
+    
+    <a href="/about" class="waves-effect waves-light">
+      
+      <i class="fas fa-user-circle" style="zoom: 0.6;"></i>
+      
+      <span>关于</span>
+    </a>
+    
+  </li>
+  
+  <li>
+    <a href="#searchModal" class="modal-trigger waves-effect waves-light">
+      <i id="searchIcon" class="fas fa-search" title="搜索" style="zoom: 0.85;"></i>
+    </a>
+  </li>
+</ul>
+
+<div id="mobile-nav" class="side-nav sidenav">
+
+    <div class="mobile-head bg-color">
+        
+        <img src="/medias/logo.png" class="logo-img circle responsive-img">
+        
+        <div class="logo-name">BIF's Notes</div>
+        <div class="logo-desc">
+            
+            Never really desperate, only the lost of the soul.
+            
+        </div>
+    </div>
+
+    
+
+    <ul class="menu-list mobile-menu-list">
+        
+        <li class="m-nav-item">
+	  
+		<a href="/" class="waves-effect waves-light">
+			
+			    <i class="fa-fw fas fa-home"></i>
+			
+			首页
+		</a>
+          
+        </li>
+        
+        <li class="m-nav-item">
+	  
+		<a href="/tags" class="waves-effect waves-light">
+			
+			    <i class="fa-fw fas fa-tags"></i>
+			
+			标签
+		</a>
+          
+        </li>
+        
+        <li class="m-nav-item">
+	  
+		<a href="/categories" class="waves-effect waves-light">
+			
+			    <i class="fa-fw fas fa-bookmark"></i>
+			
+			分类
+		</a>
+          
+        </li>
+        
+        <li class="m-nav-item">
+	  
+		<a href="/archives" class="waves-effect waves-light">
+			
+			    <i class="fa-fw fas fa-archive"></i>
+			
+			归档
+		</a>
+          
+        </li>
+        
+        <li class="m-nav-item">
+	  
+		<a href="/about" class="waves-effect waves-light">
+			
+			    <i class="fa-fw fas fa-user-circle"></i>
+			
+			关于
+		</a>
+          
+        </li>
+        
+        
+    </ul>
+</div>
+
+        </div>
+
+        
+    </nav>
+
+</header>
+
+    
+
+
+
+<div class="bg-cover pd-header post-cover" style="background-image: url('/medias/featureimages/1.jpg')">
+    <div class="container" style="right: 0px;left: 0px;">
+        <div class="row">
+            <div class="col s12 m12 l12">
+                <div class="brand">
+                    <h1 class="description center-align post-title">Java8 parallelStream 基础介绍</h1>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+
+<main class="container content">
+
+    
+    <!-- 文章内容详情 -->
+<div id="artDetail">
+    <div class="card">
+        <div class="card-content article-info">
+            <div class="row tag-cate">
+                <div class="col s7">
+                    
+                    <div class="article-tag">
+                        
+                            <a href="/tags/Stream/">
+                                <span class="chip bg-color">Stream</span>
+                            </a>
+                        
+                    </div>
+                    
+                </div>
+                <div class="col s5 right-align">
+                    
+                    <div class="post-cate">
+                        <i class="fas fa-bookmark fa-fw icon-category"></i>
+                        
+                            <a href="/categories/Java8/" class="post-category">
+                                Java8
+                            </a>
+                        
+                    </div>
+                    
+                </div>
+            </div>
+
+            <div class="post-info">
+                
+                <div class="post-date info-break-policy">
+                    <i class="far fa-calendar-minus fa-fw"></i>发布日期:&nbsp;&nbsp;
+                    2020-03-15
+                </div>
+                
+
+                
+
+                
+                <div class="info-break-policy">
+                    <i class="far fa-file-word fa-fw"></i>文章字数:&nbsp;&nbsp;
+                    1.1k
+                </div>
+                
+
+                
+
+                
+            </div>
+
+        </div>
+        <hr class="clearfix">
+        <div class="card-content article-card-content">
+            <div id="articleContent">
+                <h2 id="parallelStream-是什么？"><a href="#parallelStream-是什么？" class="headerlink" title="parallelStream 是什么？"></a>parallelStream 是什么？</h2><p>Java8中新增了Lambda语法，方便对数据进行快速迭代的流式运算，有的时候数据处理比较慢，这个时候我们就需要引入多线程来对任务进行分片操作，Stream提供了对应的方法就是parallelStream()，也就是<code>stream().parallel()</code>，这个时候就会将数据从串行流需改为并行流。这时候我们就会好奇，我们也没配置线程池，它默认的线程池大小是多少？有什么需要注意的地方？</p>
+<ul>
+<li><p>第一个问题它默认连接池是什么，大小是多大？</p>
+<p>先说结论，默认使用的连接池是 <strong><em>ForkJoinPool.commonPool</em></strong><br>连接池默认大小 <strong><em>Runtime.getRuntime().availableProcessors()</em></strong>(也就是你系统的处理器数量)<br>  我们做一个简单的测试，看看结论是否正确</p>
+<pre class=" language-java"><code class="language-java">  <span class="token keyword">public</span> <span class="token keyword">static</span> <span class="token keyword">void</span> <span class="token function">main</span> <span class="token punctuation">(</span>String<span class="token punctuation">[</span><span class="token punctuation">]</span> args<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+      Set<span class="token operator">&lt;</span>Thread<span class="token operator">></span> threads <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">HashSet</span><span class="token operator">&lt;</span><span class="token operator">></span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+      IntStream<span class="token punctuation">.</span><span class="token function">rangeClosed</span><span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">,</span><span class="token number">10</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">parallel</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">forEach</span><span class="token punctuation">(</span>value <span class="token operator">-</span><span class="token operator">></span> <span class="token punctuation">{</span>
+          Thread thread <span class="token operator">=</span> Thread<span class="token punctuation">.</span><span class="token function">currentThread</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+          <span class="token comment" spellcheck="true">//输出当前线程的类型和名字，并打印正在处理的值</span>
+           log<span class="token punctuation">.</span><span class="token function">info</span><span class="token punctuation">(</span><span class="token string">"ThreadType:{},currentThread:{},Integer:{}"</span><span class="token punctuation">,</span>thread<span class="token punctuation">.</span><span class="token function">getClass</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span>thread<span class="token punctuation">.</span><span class="token function">getName</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span>value<span class="token punctuation">)</span><span class="token punctuation">;</span>
+           threads<span class="token punctuation">.</span><span class="token function">add</span><span class="token punctuation">(</span>thread<span class="token punctuation">)</span><span class="token punctuation">;</span>
+      <span class="token punctuation">}</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+      <span class="token comment" spellcheck="true">//打印我们总共所使用到的线程集合</span>
+      log<span class="token punctuation">.</span><span class="token function">info</span><span class="token punctuation">(</span><span class="token string">"all threads:\n{}"</span><span class="token punctuation">,</span> threads<span class="token punctuation">.</span><span class="token function">stream</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">map</span><span class="token punctuation">(</span>Thread<span class="token operator">:</span><span class="token operator">:</span>getName<span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">collect</span><span class="token punctuation">(</span>Collectors<span class="token punctuation">.</span><span class="token function">joining</span><span class="token punctuation">(</span><span class="token string">"\n"</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+  <span class="token punctuation">}</span>
+</code></pre>
+<pre class=" language-verilog"><code class="language-verilog">  java<span class="token punctuation">.</span>util<span class="token punctuation">.</span>concurrent<span class="token punctuation">.</span>ForkJoinWorkerThread<span class="token punctuation">,</span>currentThread<span class="token punctuation">:</span>ForkJoinPool<span class="token punctuation">.</span>commonPool<span class="token operator">-</span>worker<span class="token operator">-</span><span class="token number">5</span><span class="token punctuation">,</span>Integer<span class="token punctuation">:</span><span class="token number">5</span>
+  java<span class="token punctuation">.</span>util<span class="token punctuation">.</span>concurrent<span class="token punctuation">.</span>ForkJoinWorkerThread<span class="token punctuation">,</span>currentThread<span class="token punctuation">:</span>ForkJoinPool<span class="token punctuation">.</span>commonPool<span class="token operator">-</span>worker<span class="token operator">-</span><span class="token number">1</span><span class="token punctuation">,</span>Integer<span class="token punctuation">:</span><span class="token number">3</span>
+  java<span class="token punctuation">.</span>lang<span class="token punctuation">.</span>Thread<span class="token punctuation">,</span>currentThread<span class="token punctuation">:</span>main<span class="token punctuation">,</span>Integer<span class="token punctuation">:</span><span class="token number">7</span>
+  java<span class="token punctuation">.</span>util<span class="token punctuation">.</span>concurrent<span class="token punctuation">.</span>ForkJoinWorkerThread<span class="token punctuation">,</span>currentThread<span class="token punctuation">:</span>ForkJoinPool<span class="token punctuation">.</span>commonPool<span class="token operator">-</span>worker<span class="token operator">-</span><span class="token number">5</span><span class="token punctuation">,</span>Integer<span class="token punctuation">:</span><span class="token number">4</span>
+  java<span class="token punctuation">.</span>util<span class="token punctuation">.</span>concurrent<span class="token punctuation">.</span>ForkJoinWorkerThread<span class="token punctuation">,</span>currentThread<span class="token punctuation">:</span>ForkJoinPool<span class="token punctuation">.</span>commonPool<span class="token operator">-</span>worker<span class="token operator">-</span><span class="token number">3</span><span class="token punctuation">,</span>Integer<span class="token punctuation">:</span><span class="token number">2</span>
+  java<span class="token punctuation">.</span>util<span class="token punctuation">.</span>concurrent<span class="token punctuation">.</span>ForkJoinWorkerThread<span class="token punctuation">,</span>currentThread<span class="token punctuation">:</span>ForkJoinPool<span class="token punctuation">.</span>commonPool<span class="token operator">-</span>worker<span class="token operator">-</span><span class="token number">7</span><span class="token punctuation">,</span>Integer<span class="token punctuation">:</span><span class="token number">8</span>
+  java<span class="token punctuation">.</span>lang<span class="token punctuation">.</span>Thread<span class="token punctuation">,</span>currentThread<span class="token punctuation">:</span>main<span class="token punctuation">,</span>Integer<span class="token punctuation">:</span><span class="token number">10</span>
+  java<span class="token punctuation">.</span>util<span class="token punctuation">.</span>concurrent<span class="token punctuation">.</span>ForkJoinWorkerThread<span class="token punctuation">,</span>currentThread<span class="token punctuation">:</span>ForkJoinPool<span class="token punctuation">.</span>commonPool<span class="token operator">-</span>worker<span class="token operator">-</span><span class="token number">6</span><span class="token punctuation">,</span>Integer<span class="token punctuation">:</span><span class="token number">6</span>
+  java<span class="token punctuation">.</span>util<span class="token punctuation">.</span>concurrent<span class="token punctuation">.</span>ForkJoinWorkerThread<span class="token punctuation">,</span>currentThread<span class="token punctuation">:</span>ForkJoinPool<span class="token punctuation">.</span>commonPool<span class="token operator">-</span>worker<span class="token operator">-</span><span class="token number">4</span><span class="token punctuation">,</span>Integer<span class="token punctuation">:</span><span class="token number">1</span>
+  java<span class="token punctuation">.</span>util<span class="token punctuation">.</span>concurrent<span class="token punctuation">.</span>ForkJoinWorkerThread<span class="token punctuation">,</span>currentThread<span class="token punctuation">:</span>ForkJoinPool<span class="token punctuation">.</span>commonPool<span class="token operator">-</span>worker<span class="token operator">-</span><span class="token number">2</span><span class="token punctuation">,</span>Integer<span class="token punctuation">:</span><span class="token number">9</span>
+  all threads<span class="token punctuation">:</span>
+  main
+  ForkJoinPool<span class="token punctuation">.</span>commonPool<span class="token operator">-</span>worker<span class="token operator">-</span><span class="token number">7</span>
+  ForkJoinPool<span class="token punctuation">.</span>commonPool<span class="token operator">-</span>worker<span class="token operator">-</span><span class="token number">4</span>
+  ForkJoinPool<span class="token punctuation">.</span>commonPool<span class="token operator">-</span>worker<span class="token operator">-</span><span class="token number">1</span>
+  ForkJoinPool<span class="token punctuation">.</span>commonPool<span class="token operator">-</span>worker<span class="token operator">-</span><span class="token number">5</span>
+  ForkJoinPool<span class="token punctuation">.</span>commonPool<span class="token operator">-</span>worker<span class="token operator">-</span><span class="token number">2</span>
+  ForkJoinPool<span class="token punctuation">.</span>commonPool<span class="token operator">-</span>worker<span class="token operator">-</span><span class="token number">6</span>
+  ForkJoinPool<span class="token punctuation">.</span>commonPool<span class="token operator">-</span>worker<span class="token operator">-</span><span class="token number">3</span>
+</code></pre>
+<p>  从日志中我们可以看到，parallelStream使用了主线程和ForkJoinPool所创建的ForkJoinWorkerThread线程，并且总的线程数也等于我当前电脑的线程数8个<br>  《java8实战》这么描述的：</p>
+</li>
+</ul>
+<blockquote>
+<p>并行流内部使用了默认的ForkJoinPool（7.2节会进一步讲到分支/合并框架），它默认的线程数量就是你的处理器数量，这个值是由Runtime.getRuntime().available- Processors()得到的。 但是你可以通过系统属性java.util.concurrent.ForkJoinPool.common. parallelism来改变线程池大小，如下所示： System.setProperty(“java.util.concurrent.ForkJoinPool.common.parallelism”,”12”); 这是一个全局设置，因此它将影响代码中所有的并行流。反过来说，目前还无法专为某个 并行流指定这个值。一般而言，让ForkJoinPool的大小等于处理器数量是个不错的默认值， 除非你有很好的理由，否则我们强烈建议你不要修改它。</p>
+</blockquote>
+<p>  如果我们要修改默认情况的并发数大小，就需要修改<code>java.util.concurrent.ForkJoinPool.common.parallelism</code> ,这个值是final类型的，也就是整个JVM中只允许修改一次，特别需要注意的是，多个parallelStream之间使用的是同一个默认的ForkJoinPool，所以最好不要把会阻塞线程的操作放在默认的池子中，否则会影响到其他默认的parallelStream。如果需要为单独的<em>parallelStream</em>指定并发数大小，就需要引入ForkJoinPool。</p>
+<pre class=" language-java"><code class="language-java">     Set<span class="token operator">&lt;</span>Thread<span class="token operator">></span> threads <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">HashSet</span><span class="token operator">&lt;</span><span class="token operator">></span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        IntStream intStream <span class="token operator">=</span> IntStream<span class="token punctuation">.</span><span class="token function">rangeClosed</span><span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">,</span> <span class="token number">10</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        threads<span class="token punctuation">.</span><span class="token function">clear</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token keyword">new</span> <span class="token class-name">ForkJoinPool</span><span class="token punctuation">(</span><span class="token number">5</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">submit</span><span class="token punctuation">(</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">-</span><span class="token operator">></span> intStream<span class="token punctuation">.</span><span class="token function">parallel</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">forEach</span><span class="token punctuation">(</span>value <span class="token operator">-</span><span class="token operator">></span> <span class="token punctuation">{</span>
+            Thread thread <span class="token operator">=</span> Thread<span class="token punctuation">.</span><span class="token function">currentThread</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+            <span class="token comment" spellcheck="true">//输出当前线程的类型和名字，并打印正在处理的值</span>
+            log<span class="token punctuation">.</span><span class="token function">info</span><span class="token punctuation">(</span><span class="token string">"currentThread:{},Integer:{}"</span><span class="token punctuation">,</span>thread<span class="token punctuation">.</span><span class="token function">getName</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span>value<span class="token punctuation">)</span><span class="token punctuation">;</span>
+            threads<span class="token punctuation">.</span><span class="token function">add</span><span class="token punctuation">(</span>thread<span class="token punctuation">)</span><span class="token punctuation">;</span>
+        <span class="token punctuation">}</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+
+        <span class="token comment" spellcheck="true">//打印我们总共所使用到的线程集合</span>
+        log<span class="token punctuation">.</span><span class="token function">info</span><span class="token punctuation">(</span><span class="token string">"all threads:\n{}"</span><span class="token punctuation">,</span> threads<span class="token punctuation">.</span><span class="token function">stream</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">map</span><span class="token punctuation">(</span>Thread<span class="token operator">:</span><span class="token operator">:</span>getName<span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">collect</span><span class="token punctuation">(</span>Collectors<span class="token punctuation">.</span><span class="token function">joining</span><span class="token punctuation">(</span><span class="token string">"\n"</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+</code></pre>
+<pre class=" language-verilog"><code class="language-verilog">  currentThread<span class="token punctuation">:</span>ForkJoinPool<span class="token operator">-</span><span class="token number">1</span><span class="token operator">-</span>worker<span class="token operator">-</span><span class="token number">3</span><span class="token punctuation">,</span>Integer<span class="token punctuation">:</span><span class="token number">9</span>
+    currentThread<span class="token punctuation">:</span>ForkJoinPool<span class="token operator">-</span><span class="token number">1</span><span class="token operator">-</span>worker<span class="token operator">-</span><span class="token number">2</span><span class="token punctuation">,</span>Integer<span class="token punctuation">:</span><span class="token number">3</span>
+    currentThread<span class="token punctuation">:</span>ForkJoinPool<span class="token operator">-</span><span class="token number">1</span><span class="token operator">-</span>worker<span class="token operator">-</span><span class="token number">3</span><span class="token punctuation">,</span>Integer<span class="token punctuation">:</span><span class="token number">10</span>
+    currentThread<span class="token punctuation">:</span>ForkJoinPool<span class="token operator">-</span><span class="token number">1</span><span class="token operator">-</span>worker<span class="token operator">-</span><span class="token number">3</span><span class="token punctuation">,</span>Integer<span class="token punctuation">:</span><span class="token number">8</span>
+    currentThread<span class="token punctuation">:</span>ForkJoinPool<span class="token operator">-</span><span class="token number">1</span><span class="token operator">-</span>worker<span class="token operator">-</span><span class="token number">4</span><span class="token punctuation">,</span>Integer<span class="token punctuation">:</span><span class="token number">2</span>
+    currentThread<span class="token punctuation">:</span>ForkJoinPool<span class="token operator">-</span><span class="token number">1</span><span class="token operator">-</span>worker<span class="token operator">-</span><span class="token number">1</span><span class="token punctuation">,</span>Integer<span class="token punctuation">:</span><span class="token number">7</span>
+    currentThread<span class="token punctuation">:</span>ForkJoinPool<span class="token operator">-</span><span class="token number">1</span><span class="token operator">-</span>worker<span class="token operator">-</span><span class="token number">3</span><span class="token punctuation">,</span>Integer<span class="token punctuation">:</span><span class="token number">4</span>
+    currentThread<span class="token punctuation">:</span>ForkJoinPool<span class="token operator">-</span><span class="token number">1</span><span class="token operator">-</span>worker<span class="token operator">-</span><span class="token number">4</span><span class="token punctuation">,</span>Integer<span class="token punctuation">:</span><span class="token number">1</span>
+    currentThread<span class="token punctuation">:</span>ForkJoinPool<span class="token operator">-</span><span class="token number">1</span><span class="token operator">-</span>worker<span class="token operator">-</span><span class="token number">5</span><span class="token punctuation">,</span>Integer<span class="token punctuation">:</span><span class="token number">6</span>
+    currentThread<span class="token punctuation">:</span>ForkJoinPool<span class="token operator">-</span><span class="token number">1</span><span class="token operator">-</span>worker<span class="token operator">-</span><span class="token number">2</span><span class="token punctuation">,</span>Integer<span class="token punctuation">:</span><span class="token number">5</span>
+    all threads<span class="token punctuation">:</span>
+    ForkJoinPool<span class="token operator">-</span><span class="token number">1</span><span class="token operator">-</span>worker<span class="token operator">-</span><span class="token number">5</span>
+    ForkJoinPool<span class="token operator">-</span><span class="token number">1</span><span class="token operator">-</span>worker<span class="token operator">-</span><span class="token number">3</span>
+    ForkJoinPool<span class="token operator">-</span><span class="token number">1</span><span class="token operator">-</span>worker<span class="token operator">-</span><span class="token number">2</span>
+    ForkJoinPool<span class="token operator">-</span><span class="token number">1</span><span class="token operator">-</span>worker<span class="token operator">-</span><span class="token number">1</span>
+    ForkJoinPool<span class="token operator">-</span><span class="token number">1</span><span class="token operator">-</span>worker<span class="token operator">-</span><span class="token number">4</span>
+</code></pre>
+<p>  从日志中我们可以看到，这个时候并发线程的数量已经被控制到5个了，并且是没有使用主线程来进行运算的</p>
+<h2 id="parallelStream的利弊"><a href="#parallelStream的利弊" class="headerlink" title="parallelStream的利弊"></a>parallelStream的利弊</h2><ul>
+<li>利：<ul>
+<li>直接使用lambda表达式，代码清晰整洁。</li>
+<li>能够直接使用forkAndJoin特性进行并行处理</li>
+</ul>
+</li>
+<li>弊：<ul>
+<li>在多线程场景中使用parallelStream是没有效果的，因为本来就是在争抢cpu的状态中，即使用上了它并不会有太大的提升，反而增加了线程切换带来的开销</li>
+<li>parallelStream不保证执行顺序，即使是使用了同步集合</li>
+</ul>
+</li>
+</ul>
+
+            </div>
+            <hr>
+
+            
+
+    <div class="reprint" id="reprint-statement">
+        
+            <div class="reprint__author">
+                <span class="reprint-meta" style="font-weight: bold;">
+                    <i class="fas fa-user">
+                        文章作者:
+                    </i>
+                </span>
+                <span class="reprint-info">
+                    <a href="https://bifwig.github.io" rel="external nofollow noreferrer">BIF</a>
+                </span>
+            </div>
+            <div class="reprint__type">
+                <span class="reprint-meta" style="font-weight: bold;">
+                    <i class="fas fa-link">
+                        文章链接:
+                    </i>
+                </span>
+                <span class="reprint-info">
+                    <a href="https://bifwig.github.io/2020/03/15/java8-de-parallelstream-ji-chu-jie-shao/">https://bifwig.github.io/2020/03/15/java8-de-parallelstream-ji-chu-jie-shao/</a>
+                </span>
+            </div>
+            <div class="reprint__notice">
+                <span class="reprint-meta" style="font-weight: bold;">
+                    <i class="fas fa-copyright">
+                        版权声明:
+                    </i>
+                </span>
+                <span class="reprint-info">
+                    本博客所有文章除特別声明外，均采用
+                    <a href="https://creativecommons.org/licenses/by/4.0/deed.zh" rel="external nofollow noreferrer" target="_blank">CC BY 4.0</a>
+                    许可协议。转载请注明来源
+                    <a href="https://bifwig.github.io" target="_blank">BIF</a>
+                    !
+                </span>
+            </div>
+        
+    </div>
+
+    <script async defer>
+      document.addEventListener("copy", function (e) {
+        let toastHTML = '<span>复制成功，请遵循本文的转载规则</span><button class="btn-flat toast-action" onclick="navToReprintStatement()" style="font-size: smaller">查看</a>';
+        M.toast({html: toastHTML})
+      });
+
+      function navToReprintStatement() {
+        $("html, body").animate({scrollTop: $("#reprint-statement").offset().top - 80}, 800);
+      }
+    </script>
+
+
+
+            <div class="tag_share" style="display: block;">
+                <div class="post-meta__tag-list" style="display: inline-block;">
+                    
+                        <div class="article-tag">
+                            
+                                <a href="/tags/Stream/">
+                                    <span class="chip bg-color">Stream</span>
+                                </a>
+                            
+                        </div>
+                    
+                </div>
+                <div class="post_share" style="zoom: 80%; width: fit-content; display: inline-block; float: right; margin: -0.15rem 0;">
+                    <link rel="stylesheet" type="text/css" href="/libs/share/css/share.min.css">
+
+<div id="article-share">
+    
+    
+    <div class="social-share" data-sites="twitter,facebook,google,qq,qzone,wechat,weibo,douban,linkedin" data-wechat-qrcode-helper="<p>微信扫一扫即可分享！</p>"></div>
+    <script src="/libs/share/js/social-share.min.js"></script>
+    
+
+    
+
+</div>
+
+                </div>
+            </div>
+            
+        </div>
+    </div>
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+<article id="prenext-posts" class="prev-next articles">
+    <div class="row article-row">
+        
+        <div class="article col s12 m6" data-aos="fade-up">
+            <div class="article-badge left-badge text-color">
+                <i class="far fa-dot-circle"></i>&nbsp;本篇
+            </div>
+            <div class="card">
+                <a href="/2020/03/15/java8-de-parallelstream-ji-chu-jie-shao/">
+                    <div class="card-image">
+                        
+                        
+                        <img src="/medias/featureimages/1.jpg" class="responsive-img" alt="Java8 parallelStream 基础介绍">
+                        
+                        <span class="card-title">Java8 parallelStream 基础介绍</span>
+                    </div>
+                </a>
+                <div class="card-content article-content">
+                    <div class="summary block-with-text">
+                        
+                            parallelStream 是什么？Java8中新增了Lambda语法，方便对数据进行快速迭代的流式运算，有的时候数据处理比较慢，这个时候我们就需要引入多线程来对任务进行分片操作，Stream提供了对应的方法就是parallelStrea
+                        
+                    </div>
+                    <div class="publish-info">
+                            <span class="publish-date">
+                                <i class="far fa-clock fa-fw icon-date"></i>2020-03-15
+                            </span>
+                        <span class="publish-author">
+                            
+                            <i class="fas fa-bookmark fa-fw icon-category"></i>
+                            
+                            <a href="/categories/Java8/" class="post-category">
+                                    Java8
+                                </a>
+                            
+                            
+                        </span>
+                    </div>
+                </div>
+
+                
+                <div class="card-action article-tags">
+                    
+                    <a href="/tags/Stream/">
+                        <span class="chip bg-color">Stream</span>
+                    </a>
+                    
+                </div>
+                
+            </div>
+        </div>
+        
+        
+        <div class="article col s12 m6" data-aos="fade-up">
+            <div class="article-badge right-badge text-color">
+                下一篇&nbsp;<i class="fas fa-chevron-right"></i>
+            </div>
+            <div class="card">
+                <a href="/2020/03/14/yi.shi-yong-liao-bing-fa-gong-ju-lei-ku-xian-cheng-an-quan-jiu-gao-zhen-wu-you-liao-ma/">
+                    <div class="card-image">
+                        
+                        
+                        <img src="/medias/featureimages/20.jpg" class="responsive-img" alt="一.使用了并发工具类库，线程安全就高枕无忧了吗？">
+                        
+                        <span class="card-title">一.使用了并发工具类库，线程安全就高枕无忧了吗？</span>
+                    </div>
+                </a>
+                <div class="card-content article-content">
+                    <div class="summary block-with-text">
+                        
+                            没有意识到线程重用导致用户信息错乱的Bug
+ThrealLocal 会重复利用线程池的线程，将springBoot中的配置文件添加server.tomcat.max-threads=1 此时Tomcat只有一个线程在运行，这时候这段代码就会
+                        
+                    </div>
+                    <div class="publish-info">
+                            <span class="publish-date">
+                                <i class="far fa-clock fa-fw icon-date"></i>2020-03-14
+                            </span>
+                        <span class="publish-author">
+                            
+                            <i class="fas fa-bookmark fa-fw icon-category"></i>
+                            
+                            <a href="/categories/common—error/" class="post-category">
+                                    common—error
+                                </a>
+                            
+                            
+                        </span>
+                    </div>
+                </div>
+                
+                <div class="card-action article-tags">
+                    
+                    <a href="/tags/Java/">
+                        <span class="chip bg-color">Java</span>
+                    </a>
+                    
+                    <a href="/tags/concurrent/">
+                        <span class="chip bg-color">concurrent</span>
+                    </a>
+                    
+                </div>
+                
+            </div>
+        </div>
+        
+    </div>
+</article>
+
+</div>
+
+
+
+<!-- 代码块功能依赖 -->
+<script type="text/javascript" src="/libs/codeBlock/codeBlockFuction.js"></script>
+
+<!-- 代码语言 -->
+
+<script type="text/javascript" src="/libs/codeBlock/codeLang.js"></script>
+
+
+<!-- 代码块复制 -->
+
+<script type="text/javascript" src="/libs/codeBlock/codeCopy.js"></script>
+
+
+<!-- 代码块收缩 -->
+
+<script type="text/javascript" src="/libs/codeBlock/codeShrink.js"></script>
+
+
+<!-- 代码块折行 -->
+
+<style type="text/css">
+code[class*="language-"], pre[class*="language-"] { white-space: pre !important; }
+</style>
+
+
+    
+
+</main>
+
+
+
+    <footer class="page-footer bg-color">
+    
+    <div class="container row center-align" style="margin-bottom: 15px !important;">
+        <div class="col s12 m8 l8 copy-right">
+            Copyright&nbsp;&copy;
+            <span id="year">2019</span>
+            <a href="https://bifwig.github.io" target="_blank">BIF</a>
+            |&nbsp;Powered by&nbsp;<a href="https://hexo.io/" target="_blank">Hexo</a>
+            |&nbsp;Theme&nbsp;<a href="https://github.com/blinkfox/hexo-theme-matery" target="_blank">Matery</a>
+            <br>
+            
+            
+            
+            
+            
+            
+            <span id="busuanzi_container_site_pv">
+                |&nbsp;<i class="far fa-eye"></i>&nbsp;总访问量:&nbsp;<span id="busuanzi_value_site_pv" class="white-color"></span>&nbsp;次
+            </span>
+            
+            
+            <span id="busuanzi_container_site_uv">
+                |&nbsp;<i class="fas fa-users"></i>&nbsp;总访问人数:&nbsp;<span id="busuanzi_value_site_uv" class="white-color"></span>&nbsp;人
+            </span>
+            
+            <br>
+            
+            <span id="sitetime">载入运行时间...</span>
+            <script>
+                function siteTime() {
+                    var seconds = 1000;
+                    var minutes = seconds * 60;
+                    var hours = minutes * 60;
+                    var days = hours * 24;
+                    var years = days * 365;
+                    var today = new Date();
+                    var startYear = "2019";
+                    var startMonth = "5";
+                    var startDate = "29";
+                    var startHour = "0";
+                    var startMinute = "0";
+                    var startSecond = "0";
+                    var todayYear = today.getFullYear();
+                    var todayMonth = today.getMonth() + 1;
+                    var todayDate = today.getDate();
+                    var todayHour = today.getHours();
+                    var todayMinute = today.getMinutes();
+                    var todaySecond = today.getSeconds();
+                    var t1 = Date.UTC(startYear, startMonth, startDate, startHour, startMinute, startSecond);
+                    var t2 = Date.UTC(todayYear, todayMonth, todayDate, todayHour, todayMinute, todaySecond);
+                    var diff = t2 - t1;
+                    var diffYears = Math.floor(diff / years);
+                    var diffDays = Math.floor((diff / days) - diffYears * 365);
+                    var diffHours = Math.floor((diff - (diffYears * 365 + diffDays) * days) / hours);
+                    var diffMinutes = Math.floor((diff - (diffYears * 365 + diffDays) * days - diffHours * hours) /
+                        minutes);
+                    var diffSeconds = Math.floor((diff - (diffYears * 365 + diffDays) * days - diffHours * hours -
+                        diffMinutes * minutes) / seconds);
+                    if (startYear == todayYear) {
+                        document.getElementById("year").innerHTML = todayYear;
+                        document.getElementById("sitetime").innerHTML = "本站已安全运行 " + diffDays + " 天 " + diffHours +
+                            " 小时 " + diffMinutes + " 分钟 " + diffSeconds + " 秒";
+                    } else {
+                        document.getElementById("year").innerHTML = startYear + " - " + todayYear;
+                        document.getElementById("sitetime").innerHTML = "本站已安全运行 " + diffYears + " 年 " + diffDays +
+                            " 天 " + diffHours + " 小时 " + diffMinutes + " 分钟 " + diffSeconds + " 秒";
+                    }
+                }
+                setInterval(siteTime, 1000);
+            </script>
+            
+            <br>
+            
+        </div>
+        <div class="col s12 m4 l4 social-link social-statis">
+    <a href="https://github.com/BIFWIG" class="tooltipped" target="_blank" data-tooltip="访问我的GitHub" data-position="top" data-delay="50">
+        <i class="fab fa-github"></i>
+    </a>
+
+
+
+    <a href="mailto:i@bifwig.cn" class="tooltipped" target="_blank" data-tooltip="邮件联系我" data-position="top" data-delay="50">
+        <i class="fas fa-envelope-open"></i>
+    </a>
+
+
+
+
+
+
+
+
+
+
+
+
+
+</div>
+    </div>
+</footer>
+
+<div class="progress-bar"></div>
+
+
+    <!-- 搜索遮罩框 -->
+<div id="searchModal" class="modal">
+    <div class="modal-content">
+        <div class="search-header">
+            <span class="title"><i class="fas fa-search"></i>&nbsp;&nbsp;搜索</span>
+            <input type="search" id="searchInput" name="s" placeholder="请输入搜索的关键字" class="search-input">
+        </div>
+        <div id="searchResult"></div>
+    </div>
+</div>
+
+<script src="/js/search.js"></script>
+<script type="text/javascript">
+$(function () {
+    searchFunc("/" + "search.xml", 'searchInput', 'searchResult');
+});
+</script>
+    <!-- 回到顶部按钮 -->
+<div id="backTop" class="top-scroll">
+    <a class="btn-floating btn-large waves-effect waves-light" href="#!">
+        <i class="fas fa-arrow-up"></i>
+    </a>
+</div>
+
+
+    <script src="/libs/materialize/materialize.min.js"></script>
+    <script src="/libs/masonry/masonry.pkgd.min.js"></script>
+    <script src="/libs/aos/aos.js"></script>
+    <script src="/libs/scrollprogress/scrollProgress.min.js"></script>
+    <script src="/libs/lightGallery/js/lightgallery-all.min.js"></script>
+    <script src="/js/matery.js"></script>
+
+    <!-- Baidu Analytics -->
+
+    <!-- Baidu Push -->
+
+<script>
+    (function () {
+        var bp = document.createElement('script');
+        var curProtocol = window.location.protocol.split(':')[0];
+        if (curProtocol === 'https') {
+            bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';
+        } else {
+            bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+        }
+        var s = document.getElementsByTagName("script")[0];
+        s.parentNode.insertBefore(bp, s);
+    })();
+</script>
+
+    
+    <script src="/libs/others/clicklove.js" async="async"></script>
+    
+    
+    <script async src="/libs/others/busuanzi.pure.mini.js"></script>
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    
+    
+    <script src="/libs/instantpage/instantpage.js" type="module"></script>
+    
+
+</body>
+
+</html>
