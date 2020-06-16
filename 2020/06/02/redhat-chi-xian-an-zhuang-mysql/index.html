@@ -270,7 +270,7 @@
                 
                 <div class="info-break-policy">
                     <i class="far fa-file-word fa-fw"></i>文章字数:&nbsp;&nbsp;
-                    652
+                    650
                 </div>
                 
 
@@ -286,29 +286,37 @@
                 <h2 id="安装环境"><a href="#安装环境" class="headerlink" title="安装环境"></a>安装环境</h2><ol>
 <li>RedHat 7.6<h2 id="安装步骤"><a href="#安装步骤" class="headerlink" title="安装步骤"></a>安装步骤</h2></li>
 <li>官网下载 <code>mysql-community-server-8.0.20-1.el7.x86_64.rpm</code> 和 <code>mysql-community-client-8.0.20-1.el7.x86_64.rpm</code></li>
-<li>执行安装命令，<br><code>`</code> shell<br>rpm -hvi mysql-community-server-8.0.20-1.el7.x86_64.rpm </li>
+<li>执行安装命令，</li>
 </ol>
-<h2 id="如果提示-mysql-community-server-8-0-20-1-el7-x86-64-rpm-Header-V3-DSA-SHA1-Signature-key-ID-5072e1f5-NOKEY，-添加-–force-–nodeps"><a href="#如果提示-mysql-community-server-8-0-20-1-el7-x86-64-rpm-Header-V3-DSA-SHA1-Signature-key-ID-5072e1f5-NOKEY，-添加-–force-–nodeps" class="headerlink" title="如果提示 mysql-community-server-8.0.20-1.el7.x86_64.rpm: Header V3 DSA/SHA1 Signature, key ID 5072e1f5: NOKEY， 添加 –force –nodeps"></a>如果提示 mysql-community-server-8.0.20-1.el7.x86_64.rpm: Header V3 DSA/SHA1 Signature, key ID 5072e1f5: NOKEY， 添加 –force –nodeps</h2><p>rpm -hvi mysql-community-server-8.0.20-1.el7.x86_64.rpm  –force –nodeps</p>
-<pre><code>3. 出现提示`   1:mysql-community-server-8.0.20-1.e################################# [100%]` 此时 服务端已经安装完成
-4. `vim /etc/my.cnf` 在末尾添加上忽略大小写 `lower_case_table_names=1`
-  ``` config
-  datadir=/var/lib/mysql
-socket=/var/lib/mysql/mysql.sock
+<pre><code class="shell">rpm -hvi mysql-community-server-8.0.20-1.el7.x86_64.rpm 
+## 如果提示 mysql-community-server-8.0.20-1.el7.x86_64.rpm: Header V3 DSA/SHA1 Signature, key ID 5072e1f5: NOKEY， 添加 --force --nodeps
+rpm -hvi mysql-community-server-8.0.20-1.el7.x86_64.rpm  --force --nodeps
 
-log-error=/var/log/mysqld.log
-pid-file=/var/run/mysqld/mysqld.pid
+</code></pre>
+<ol start="3">
+<li>出现提示<code>1:mysql-community-server-8.0.20-1.e################################# [100%]</code> 此时 服务端已经安装完成</li>
+<li><code>vim /etc/my.cnf</code> 在末尾添加上忽略大小写 <code>lower_case_table_names=1</code></li>
+</ol>
+<pre><code class="config">    datadir=/var/lib/mysql
+    socket=/var/lib/mysql/mysql.sock
 
-#skip-grant-tables
-lower_case_table_names=1
-</code></pre><ol start="5">
+    log-error=/var/log/mysqld.log
+    pid-file=/var/run/mysqld/mysqld.pid
+
+    #skip-grant-tables
+    lower_case_table_names=1
+</code></pre>
+<ol start="5">
 <li><code>mysqld --initialize --user=root</code> 初始化用户</li>
 <li><code>systemctl start mysqld</code> 启动服务 ，此时可能出现启动失败，通过<code>tailf /var/log/mysqld.log</code> 查看mysql错误日志</li>
 <li>出现<code>Data Dictionary initialization failed.</code> 说明data文件夹权限不够，需要修改所有组 <code>chown -R mysql /var/lib/mysql</code></li>
 <li>再启动就能正常启动了</li>
 <li>接下来安装客户端 <code>rpm -hvi mysql-community-client-8.0.20-1.el7.x86_64.rpm  --force --nodeps</code></li>
-<li><code>grep &quot;temporary password&quot; /var/log/mysqld.log</code> 获取临时密码<pre><code class="log">2020-05-31T13:11:30.548051Z 6 [Note] [MY-010454] [Server] A temporary password is generated for root@localhost: S&gt;Ro3ia/dapR
+<li><code>grep &quot;temporary password&quot; /var/log/mysqld.log</code> 获取临时密码</li>
+</ol>
+<pre><code class="log">2020-05-31T13:11:30.548051Z 6 [Note] [MY-010454] [Server] A temporary password is generated for root@localhost: S&gt;Ro3ia/dapR
 </code></pre>
-</li>
+<ol start="11">
 <li><code>mysql -uroot -p</code> 尝试登录</li>
 </ol>
 <hr>

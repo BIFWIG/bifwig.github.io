@@ -1,145 +1,894 @@
 <?xml version="1.0" encoding="utf-8"?>
-<search> 
-  
-  
-    
-    <entry>
-      <title>RedHat离线安装Mysql8.0</title>
-      <link href="/2020/06/02/redhat-chi-xian-an-zhuang-mysql/"/>
-      <url>/2020/06/02/redhat-chi-xian-an-zhuang-mysql/</url>
-      
-        <content type="html"><![CDATA[<h2 id="安装环境"><a href="#安装环境" class="headerlink" title="安装环境"></a>安装环境</h2><ol><li>RedHat 7.6<h2 id="安装步骤"><a href="#安装步骤" class="headerlink" title="安装步骤"></a>安装步骤</h2></li><li>官网下载 <code>mysql-community-server-8.0.20-1.el7.x86_64.rpm</code> 和 <code>mysql-community-client-8.0.20-1.el7.x86_64.rpm</code></li><li>执行安装命令，<br><code>`</code> shell<br>rpm -hvi mysql-community-server-8.0.20-1.el7.x86_64.rpm </li></ol><h2 id="如果提示-mysql-community-server-8-0-20-1-el7-x86-64-rpm-Header-V3-DSA-SHA1-Signature-key-ID-5072e1f5-NOKEY，-添加-–force-–nodeps"><a href="#如果提示-mysql-community-server-8-0-20-1-el7-x86-64-rpm-Header-V3-DSA-SHA1-Signature-key-ID-5072e1f5-NOKEY，-添加-–force-–nodeps" class="headerlink" title="如果提示 mysql-community-server-8.0.20-1.el7.x86_64.rpm: Header V3 DSA/SHA1 Signature, key ID 5072e1f5: NOKEY， 添加 –force –nodeps"></a>如果提示 mysql-community-server-8.0.20-1.el7.x86_64.rpm: Header V3 DSA/SHA1 Signature, key ID 5072e1f5: NOKEY， 添加 –force –nodeps</h2><p>rpm -hvi mysql-community-server-8.0.20-1.el7.x86_64.rpm  –force –nodeps</p><pre><code>3. 出现提示`   1:mysql-community-server-8.0.20-1.e################################# [100%]` 此时 服务端已经安装完成4. `vim /etc/my.cnf` 在末尾添加上忽略大小写 `lower_case_table_names=1`  ``` config  datadir=/var/lib/mysqlsocket=/var/lib/mysql/mysql.socklog-error=/var/log/mysqld.logpid-file=/var/run/mysqld/mysqld.pid#skip-grant-tableslower_case_table_names=1</code></pre><ol start="5"><li><code>mysqld --initialize --user=root</code> 初始化用户</li><li><code>systemctl start mysqld</code> 启动服务 ，此时可能出现启动失败，通过<code>tailf /var/log/mysqld.log</code> 查看mysql错误日志</li><li>出现<code>Data Dictionary initialization failed.</code> 说明data文件夹权限不够，需要修改所有组 <code>chown -R mysql /var/lib/mysql</code></li><li>再启动就能正常启动了</li><li>接下来安装客户端 <code>rpm -hvi mysql-community-client-8.0.20-1.el7.x86_64.rpm  --force --nodeps</code></li><li><code>grep &quot;temporary password&quot; /var/log/mysqld.log</code> 获取临时密码<pre><code class="log">2020-05-31T13:11:30.548051Z 6 [Note] [MY-010454] [Server] A temporary password is generated for root@localhost: S&gt;Ro3ia/dapR</code></pre></li><li><code>mysql -uroot -p</code> 尝试登录</li></ol><hr><blockquote><p>该部份由于一开始下载错mysql客户端版本，如果未出现类似错误提示，可以跳过</p></blockquote><blockquote><ol><li>mysql: error while loading shared libraries: libssl.so.1.1: cannot open shared object file: No such file or directory</li></ol></blockquote><ul><li>该问题是openssl版本过低 <code>openssl version -a</code> 查看版本为 <code>OpenSSL 1.0.2k-fips  26 Jan 2017</code> </li><li>升级版本到 <code>openssl-1.1.1g.tar.gz</code></li><li><code>tar -xvzf openssl-1.1.1g.tar.gz</code></li><li><code>cd openssl-1.1.1g</code></li><li><code>./config shared zlib</code></li><li><code>make</code> 执行到这一步发现缺少<code>gcc</code> ，所以手动安装gcc环境 <code>yum install gcc</code></li><li>安装完gcc继续执行 <code>make</code> 提示 <code>crypto/comp/c_zlib.c:35:19: fatal error: zlib.h: No such file or directory</code></li><li>手动安装zlib库 <code>tar -xvzf zlib-1.2.11.tar.gz</code></li><li><code>cd zlib-1.2.11</code></li><li><code>./configure</code></li><li><code>make</code></li><li><code>make install</code> 安装完zlib 回到 openssl文件夹进行安装</li><li><code>cd openssl-1.1.1g</code> </li><li><code>./config shared zlib</code></li><li><code>make</code></li><li><code>make install</code></li><li><code>ln -s /usr/local/lib64/libssl.so.1.1 /usr/lib64/libssl.so.1.1</code></li><li><code>ln -s /usr/local/lib64/libcrypto.so.1.1 /usr/lib64/libcrypto.so.1.1</code></li></ul><hr><ol start="12"><li>修改root密码 <code>alter user &#39;root&#39;@&#39;localhost&#39; identified by &#39;123456&#39;;</code> </li><li><code>flush privileges;</code> 刷新权限</li><li><code>use mysql;</code> 切换mysql数据库</li><li><code>update user set host = &#39;%&#39; where user = &#39;root&#39; ;</code>修改用户访问权限，允许远程访问</li><li><code>alter user &#39;root&#39;@&#39;%&#39; identified with mysql_native_password by &#39;123456&#39;;</code> 修改加密方式，修改为原始加密方式</li><li><code>flush privileges;</code> 刷新权限</li><li>通过第三方软件验证是否安装完成</li></ol>]]></content>
-      
-      
-      
-        <tags>
-            
-            <tag> MySQL </tag>
-            
-            <tag> RedHat </tag>
-            
-            <tag> rpm </tag>
-            
-        </tags>
-      
-    </entry>
-    
-    
-    
-    <entry>
-      <title>一个程序使用两个不同版本的jar包</title>
-      <link href="/2020/03/16/yi-ge-cheng-xu-shi-yong-liang-ge-bu-tong-ban-ben-de-jar-bao/"/>
-      <url>/2020/03/16/yi-ge-cheng-xu-shi-yong-liang-ge-bu-tong-ban-ben-de-jar-bao/</url>
-      
-        <content type="html"><![CDATA[<h2 id="场景"><a href="#场景" class="headerlink" title="场景"></a>场景</h2><p>我们系统是连接mysql8的所以我们在项目中会使用到mysql8.0.19版本的驱动，这时候客户有一个需求，需要在页面上配置数据源信息，获取对应数据库的数据，数据库版本包括mysql5.7 ，如果直接使用mysql8的驱动会产生不兼容的情况（可以通过修改url的方式解决，这儿不讨论这种做法），此时我们就需要将两个驱动中类进行动态加载。</p><h2 id="分析"><a href="#分析" class="headerlink" title="分析"></a>分析</h2><ol><li>我们一般情况使用jdbc加载驱动都是直接<code>Class.forName(driverClass)</code> 这种方式导入，这时候实际上会将驱动注册到我们<code>DriverManager</code>的类上面,然后我们在通过<code>getConnection</code>获取连接对象</li><li><p>通过分析源码可知，在我们获取连接的时候，会进行验证驱动是否允许,如果允许才会进行驱动调用。</p><pre><code class="java">//  Worker method called by the public getConnection() methods. private static Connection getConnection(         //......     String url, java.util.Properties info, Class&lt;?&gt; caller) throws SQLException {     for(DriverInfo aDriver : registeredDrivers) {         // If the caller does not have permission to load the driver then         // skip it.         if(isDriverAllowed(aDriver.driver, callerCL)) {             try {                 println(&quot;    trying &quot; + aDriver.driver.getClass().getName());                 Connection con = aDriver.driver.connect(url, info);                 if (con != null) {                     // Success!                     println(&quot;getConnection returning &quot; + aDriver.driver.getClass().getName());                     return (con);                 }             } catch (SQLException ex) {                 if (reason == null) {                     reason = ex;                 }             }         } else {             println(&quot;    skipping: &quot; + aDriver.getClass().getName());         }     }             //...... }          private static boolean isDriverAllowed(Driver driver, ClassLoader classLoader) {             boolean result = false;             if(driver != null) {        Class&lt;?&gt; aClass = null;                  try {             aClass =  Class.forName(driver.getClass().getName(), true, classLoader);         } catch (Exception ex) {             result = false;         }          result = ( aClass == driver.getClass() ) ? true : false;     }        return result; }</code></pre></li><li>但是由于<strong>双亲委派</strong>机制的存在，我们调用同类同名的class的时候会首先去调用顶级的classLoader，此时我们就会获取到 <strong>8.0</strong>版本的Driver ，这个并不是我们想要的结果，所以我们必须自定义一个classLoader 来破坏双亲委派机制，从而实现加载我们任意版本的class。<h2 id="实现"><a href="#实现" class="headerlink" title="实现"></a>实现</h2></li><li><p>简单实现一个破坏了双亲委派的classLoader</p><pre><code class="java">public class MyClassloader extends URLClassLoader { public MyClassloader(URL[] urls) {     super(urls); } Map&lt;String, Class&lt;?&gt;&gt; classMap = new HashMap&lt;&gt;(); @Override public Class&lt;?&gt; loadClass(String name) throws ClassNotFoundException {     Class&lt;?&gt; classLoaded = classMap.get(name);     if (classLoaded != null) {         return classLoaded;     }     Class&lt;?&gt; findClass = null;     try {         findClass = findClass(name);     } catch (Exception e) {         //还可以从父类查找，这个异常吞掉，如果没有父类会抛出     }     if (findClass != null) {         classMap.put(name, findClass);         return findClass;     }     return super.loadClass(name); } @Override protected Package getPackage(String name) {     return null; }}</code></pre></li><li>就能够使用这个我们自己写的classLoader加载jar包中的class了<pre><code class="java">             String driverClass = &quot;com.mysql.jdbc.Driver&quot;;     File file = new File(&quot;mysql/mysql-connector-java-5.1.47.jar&quot;);     MyClassloader loader = new MyClassloader(new URL[]{file.toURL()});     Driver driver = (Driver) loader.loadClass(driverClass).newInstance();     Connection connect = driver.connect(url, properties);</code></pre></li></ol>]]></content>
-      
-      
-      
-        <tags>
-            
-            <tag> classLoader </tag>
-            
-        </tags>
-      
-    </entry>
-    
-    
-    
-    <entry>
-      <title>Java8 parallelStream 基础介绍</title>
-      <link href="/2020/03/15/java8-de-parallelstream-ji-chu-jie-shao/"/>
-      <url>/2020/03/15/java8-de-parallelstream-ji-chu-jie-shao/</url>
-      
-        <content type="html"><![CDATA[<h2 id="parallelStream-是什么？"><a href="#parallelStream-是什么？" class="headerlink" title="parallelStream 是什么？"></a>parallelStream 是什么？</h2><p>Java8中新增了Lambda语法，方便对数据进行快速迭代的流式运算，有的时候数据处理比较慢，这个时候我们就需要引入多线程来对任务进行分片操作，Stream提供了对应的方法就是parallelStream()，也就是<code>stream().parallel()</code>，这个时候就会将数据从串行流需改为并行流。这时候我们就会好奇，我们也没配置线程池，它默认的线程池大小是多少？有什么需要注意的地方？</p><ul><li><p>第一个问题它默认连接池是什么，大小是多大？</p><p>先说结论，默认使用的连接池是 <strong><em>ForkJoinPool.commonPool</em></strong><br>连接池默认大小 <strong><em>Runtime.getRuntime().availableProcessors()</em></strong>(也就是你系统的处理器数量)<br>  我们做一个简单的测试，看看结论是否正确</p><pre><code class="java">  public static void main (String[] args) {      Set&lt;Thread&gt; threads = new HashSet&lt;&gt;();      IntStream.rangeClosed(1,10).parallel().forEach(value -&gt; {          Thread thread = Thread.currentThread();          //输出当前线程的类型和名字，并打印正在处理的值           log.info(&quot;ThreadType:{},currentThread:{},Integer:{}&quot;,thread.getClass(),thread.getName(),value);           threads.add(thread);      });      //打印我们总共所使用到的线程集合      log.info(&quot;all threads:\n{}&quot;, threads.stream().map(Thread::getName).collect(Collectors.joining(&quot;\n&quot;)));  }</code></pre><pre><code class="verilog">  java.util.concurrent.ForkJoinWorkerThread,currentThread:ForkJoinPool.commonPool-worker-5,Integer:5  java.util.concurrent.ForkJoinWorkerThread,currentThread:ForkJoinPool.commonPool-worker-1,Integer:3  java.lang.Thread,currentThread:main,Integer:7  java.util.concurrent.ForkJoinWorkerThread,currentThread:ForkJoinPool.commonPool-worker-5,Integer:4  java.util.concurrent.ForkJoinWorkerThread,currentThread:ForkJoinPool.commonPool-worker-3,Integer:2  java.util.concurrent.ForkJoinWorkerThread,currentThread:ForkJoinPool.commonPool-worker-7,Integer:8  java.lang.Thread,currentThread:main,Integer:10  java.util.concurrent.ForkJoinWorkerThread,currentThread:ForkJoinPool.commonPool-worker-6,Integer:6  java.util.concurrent.ForkJoinWorkerThread,currentThread:ForkJoinPool.commonPool-worker-4,Integer:1  java.util.concurrent.ForkJoinWorkerThread,currentThread:ForkJoinPool.commonPool-worker-2,Integer:9  all threads:  main  ForkJoinPool.commonPool-worker-7  ForkJoinPool.commonPool-worker-4  ForkJoinPool.commonPool-worker-1  ForkJoinPool.commonPool-worker-5  ForkJoinPool.commonPool-worker-2  ForkJoinPool.commonPool-worker-6  ForkJoinPool.commonPool-worker-3</code></pre><p>  从日志中我们可以看到，parallelStream使用了主线程和ForkJoinPool所创建的ForkJoinWorkerThread线程，并且总的线程数也等于我当前电脑的线程数8个<br>  《java8实战》这么描述的：</p></li></ul><blockquote><p>并行流内部使用了默认的ForkJoinPool（7.2节会进一步讲到分支/合并框架），它默认的线程数量就是你的处理器数量，这个值是由Runtime.getRuntime().available- Processors()得到的。 但是你可以通过系统属性java.util.concurrent.ForkJoinPool.common. parallelism来改变线程池大小，如下所示： System.setProperty(“java.util.concurrent.ForkJoinPool.common.parallelism”,”12”); 这是一个全局设置，因此它将影响代码中所有的并行流。反过来说，目前还无法专为某个 并行流指定这个值。一般而言，让ForkJoinPool的大小等于处理器数量是个不错的默认值， 除非你有很好的理由，否则我们强烈建议你不要修改它。</p></blockquote><p>  如果我们要修改默认情况的并发数大小，就需要修改<code>java.util.concurrent.ForkJoinPool.common.parallelism</code> ,这个值是final类型的，也就是整个JVM中只允许修改一次，特别需要注意的是，多个parallelStream之间使用的是同一个默认的ForkJoinPool，所以最好不要把会阻塞线程的操作放在默认的池子中，否则会影响到其他默认的parallelStream。如果需要为单独的<em>parallelStream</em>指定并发数大小，就需要引入ForkJoinPool。</p><pre><code class="java">     Set&lt;Thread&gt; threads = new HashSet&lt;&gt;();        IntStream intStream = IntStream.rangeClosed(1, 10);        threads.clear();        new ForkJoinPool(5).submit(() -&gt; intStream.parallel().forEach(value -&gt; {            Thread thread = Thread.currentThread();            //输出当前线程的类型和名字，并打印正在处理的值            log.info(&quot;currentThread:{},Integer:{}&quot;,thread.getName(),value);            threads.add(thread);        }));        //打印我们总共所使用到的线程集合        log.info(&quot;all threads:\n{}&quot;, threads.stream().map(Thread::getName).collect(Collectors.joining(&quot;\n&quot;)));</code></pre><pre><code class="verilog">  currentThread:ForkJoinPool-1-worker-3,Integer:9    currentThread:ForkJoinPool-1-worker-2,Integer:3    currentThread:ForkJoinPool-1-worker-3,Integer:10    currentThread:ForkJoinPool-1-worker-3,Integer:8    currentThread:ForkJoinPool-1-worker-4,Integer:2    currentThread:ForkJoinPool-1-worker-1,Integer:7    currentThread:ForkJoinPool-1-worker-3,Integer:4    currentThread:ForkJoinPool-1-worker-4,Integer:1    currentThread:ForkJoinPool-1-worker-5,Integer:6    currentThread:ForkJoinPool-1-worker-2,Integer:5    all threads:    ForkJoinPool-1-worker-5    ForkJoinPool-1-worker-3    ForkJoinPool-1-worker-2    ForkJoinPool-1-worker-1    ForkJoinPool-1-worker-4</code></pre><p>  从日志中我们可以看到，这个时候并发线程的数量已经被控制到5个了，并且是没有使用主线程来进行运算的</p><h2 id="parallelStream的利弊"><a href="#parallelStream的利弊" class="headerlink" title="parallelStream的利弊"></a>parallelStream的利弊</h2><ul><li>利：<ul><li>直接使用lambda表达式，代码清晰整洁。</li><li>能够直接使用forkAndJoin特性进行并行处理</li></ul></li><li>弊：<ul><li>在多线程场景中使用parallelStream是没有效果的，因为本来就是在争抢cpu的状态中，即使用上了它并不会有太大的提升，反而增加了线程切换带来的开销</li><li>parallelStream不保证执行顺序，即使是使用了同步集合</li></ul></li></ul>]]></content>
-      
-      
+<search>
+  <entry>
+    <title>RedHat离线安装Mysql8.0</title>
+    <url>/2020/06/02/redhat-chi-xian-an-zhuang-mysql/</url>
+    <content><![CDATA[<h2 id="安装环境"><a href="#安装环境" class="headerlink" title="安装环境"></a>安装环境</h2><ol>
+<li>RedHat 7.6<h2 id="安装步骤"><a href="#安装步骤" class="headerlink" title="安装步骤"></a>安装步骤</h2></li>
+<li>官网下载 <code>mysql-community-server-8.0.20-1.el7.x86_64.rpm</code> 和 <code>mysql-community-client-8.0.20-1.el7.x86_64.rpm</code></li>
+<li>执行安装命令，</li>
+</ol>
+<pre><code class="shell">rpm -hvi mysql-community-server-8.0.20-1.el7.x86_64.rpm 
+## 如果提示 mysql-community-server-8.0.20-1.el7.x86_64.rpm: Header V3 DSA/SHA1 Signature, key ID 5072e1f5: NOKEY， 添加 --force --nodeps
+rpm -hvi mysql-community-server-8.0.20-1.el7.x86_64.rpm  --force --nodeps
+
+</code></pre>
+<ol start="3">
+<li>出现提示<code>1:mysql-community-server-8.0.20-1.e################################# [100%]</code> 此时 服务端已经安装完成</li>
+<li><code>vim /etc/my.cnf</code> 在末尾添加上忽略大小写 <code>lower_case_table_names=1</code></li>
+</ol>
+<pre><code class="config">    datadir=/var/lib/mysql
+    socket=/var/lib/mysql/mysql.sock
+
+    log-error=/var/log/mysqld.log
+    pid-file=/var/run/mysqld/mysqld.pid
+
+    #skip-grant-tables
+    lower_case_table_names=1
+</code></pre>
+<ol start="5">
+<li><code>mysqld --initialize --user=root</code> 初始化用户</li>
+<li><code>systemctl start mysqld</code> 启动服务 ，此时可能出现启动失败，通过<code>tailf /var/log/mysqld.log</code> 查看mysql错误日志</li>
+<li>出现<code>Data Dictionary initialization failed.</code> 说明data文件夹权限不够，需要修改所有组 <code>chown -R mysql /var/lib/mysql</code></li>
+<li>再启动就能正常启动了</li>
+<li>接下来安装客户端 <code>rpm -hvi mysql-community-client-8.0.20-1.el7.x86_64.rpm  --force --nodeps</code></li>
+<li><code>grep &quot;temporary password&quot; /var/log/mysqld.log</code> 获取临时密码</li>
+</ol>
+<pre><code class="log">2020-05-31T13:11:30.548051Z 6 [Note] [MY-010454] [Server] A temporary password is generated for root@localhost: S&gt;Ro3ia/dapR
+</code></pre>
+<ol start="11">
+<li><code>mysql -uroot -p</code> 尝试登录</li>
+</ol>
+<hr>
+<blockquote>
+<p>该部份由于一开始下载错mysql客户端版本，如果未出现类似错误提示，可以跳过</p>
+</blockquote>
+<blockquote>
+<ol>
+<li>mysql: error while loading shared libraries: libssl.so.1.1: cannot open shared object file: No such file or directory</li>
+</ol>
+</blockquote>
+<ul>
+<li>该问题是openssl版本过低 <code>openssl version -a</code> 查看版本为 <code>OpenSSL 1.0.2k-fips  26 Jan 2017</code> </li>
+<li>升级版本到 <code>openssl-1.1.1g.tar.gz</code></li>
+<li><code>tar -xvzf openssl-1.1.1g.tar.gz</code></li>
+<li><code>cd openssl-1.1.1g</code></li>
+<li><code>./config shared zlib</code></li>
+<li><code>make</code> 执行到这一步发现缺少<code>gcc</code> ，所以手动安装gcc环境 <code>yum install gcc</code></li>
+<li>安装完gcc继续执行 <code>make</code> 提示 <code>crypto/comp/c_zlib.c:35:19: fatal error: zlib.h: No such file or directory</code></li>
+<li>手动安装zlib库 <code>tar -xvzf zlib-1.2.11.tar.gz</code></li>
+<li><code>cd zlib-1.2.11</code></li>
+<li><code>./configure</code></li>
+<li><code>make</code></li>
+<li><code>make install</code> 安装完zlib 回到 openssl文件夹进行安装</li>
+<li><code>cd openssl-1.1.1g</code> </li>
+<li><code>./config shared zlib</code></li>
+<li><code>make</code></li>
+<li><code>make install</code></li>
+<li><code>ln -s /usr/local/lib64/libssl.so.1.1 /usr/lib64/libssl.so.1.1</code></li>
+<li><code>ln -s /usr/local/lib64/libcrypto.so.1.1 /usr/lib64/libcrypto.so.1.1</code></li>
+</ul>
+<hr>
+<ol start="12">
+<li>修改root密码 <code>alter user &#39;root&#39;@&#39;localhost&#39; identified by &#39;123456&#39;;</code> </li>
+<li><code>flush privileges;</code> 刷新权限</li>
+<li><code>use mysql;</code> 切换mysql数据库</li>
+<li><code>update user set host = &#39;%&#39; where user = &#39;root&#39; ;</code>修改用户访问权限，允许远程访问</li>
+<li><code>alter user &#39;root&#39;@&#39;%&#39; identified with mysql_native_password by &#39;123456&#39;;</code> 修改加密方式，修改为原始加密方式</li>
+<li><code>flush privileges;</code> 刷新权限</li>
+<li>通过第三方软件验证是否安装完成</li>
+</ol>
+]]></content>
+      <tags>
+        <tag>MySQL</tag>
+        <tag>RedHat</tag>
+        <tag>rpm</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>一个程序使用两个不同版本的jar包</title>
+    <url>/2020/03/16/yi-ge-cheng-xu-shi-yong-liang-ge-bu-tong-ban-ben-de-jar-bao/</url>
+    <content><![CDATA[<h2 id="场景"><a href="#场景" class="headerlink" title="场景"></a>场景</h2><p>我们系统是连接mysql8的所以我们在项目中会使用到mysql8.0.19版本的驱动，这时候客户有一个需求，需要在页面上配置数据源信息，获取对应数据库的数据，数据库版本包括mysql5.7 ，如果直接使用mysql8的驱动会产生不兼容的情况（可以通过修改url的方式解决，这儿不讨论这种做法），此时我们就需要将两个驱动中类进行动态加载。</p>
+<h2 id="分析"><a href="#分析" class="headerlink" title="分析"></a>分析</h2><ol>
+<li>我们一般情况使用jdbc加载驱动都是直接<code>Class.forName(driverClass)</code> 这种方式导入，这时候实际上会将驱动注册到我们<code>DriverManager</code>的类上面,然后我们在通过<code>getConnection</code>获取连接对象</li>
+<li><p>通过分析源码可知，在我们获取连接的时候，会进行验证驱动是否允许,如果允许才会进行驱动调用。</p>
+<pre><code class="java">//  Worker method called by the public getConnection() methods.
+ private static Connection getConnection(
+         //......
+     String url, java.util.Properties info, Class&lt;?&gt; caller) throws SQLException {
+     for(DriverInfo aDriver : registeredDrivers) {
+         // If the caller does not have permission to load the driver then
+         // skip it.
+         if(isDriverAllowed(aDriver.driver, callerCL)) {
+             try {
+                 println(&quot;    trying &quot; + aDriver.driver.getClass().getName());
+                 Connection con = aDriver.driver.connect(url, info);
+                 if (con != null) {
+                     // Success!
+                     println(&quot;getConnection returning &quot; + aDriver.driver.getClass().getName());
+                     return (con);
+                 }
+             } catch (SQLException ex) {
+                 if (reason == null) {
+                     reason = ex;
+                 }
+             }
+
+         } else {
+             println(&quot;    skipping: &quot; + aDriver.getClass().getName());
+         }
+
+     }
+             //......
+
+ }
+
+          private static boolean isDriverAllowed(Driver driver, ClassLoader classLoader) {        
+     boolean result = false;       
+      if(driver != null) {
+        Class&lt;?&gt; aClass = null;           
+       try {
+             aClass =  Class.forName(driver.getClass().getName(), true, classLoader);
+         } catch (Exception ex) {
+             result = false;
+         }
+          result = ( aClass == driver.getClass() ) ? true : false;
+     }    
+
+    return result;
+ }
+</code></pre>
+</li>
+<li>但是由于<strong>双亲委派</strong>机制的存在，我们调用同类同名的class的时候会首先去调用顶级的classLoader，此时我们就会获取到 <strong>8.0</strong>版本的Driver ，这个并不是我们想要的结果，所以我们必须自定义一个classLoader 来破坏双亲委派机制，从而实现加载我们任意版本的class。<h2 id="实现"><a href="#实现" class="headerlink" title="实现"></a>实现</h2></li>
+<li><p>简单实现一个破坏了双亲委派的classLoader</p>
+<pre><code class="java">public class MyClassloader extends URLClassLoader {
+ public MyClassloader(URL[] urls) {
+     super(urls);
+ }
+
+ Map&lt;String, Class&lt;?&gt;&gt; classMap = new HashMap&lt;&gt;();
+
+ @Override
+ public Class&lt;?&gt; loadClass(String name) throws ClassNotFoundException {
+     Class&lt;?&gt; classLoaded = classMap.get(name);
+     if (classLoaded != null) {
+         return classLoaded;
+     }
+     Class&lt;?&gt; findClass = null;
+     try {
+         findClass = findClass(name);
+     } catch (Exception e) {
+         //还可以从父类查找，这个异常吞掉，如果没有父类会抛出
+     }
+     if (findClass != null) {
+         classMap.put(name, findClass);
+         return findClass;
+     }
+     return super.loadClass(name);
+ }
+
+ @Override
+ protected Package getPackage(String name) {
+     return null;
+ }
+}
+</code></pre>
+</li>
+<li>就能够使用这个我们自己写的classLoader加载jar包中的class了<pre><code class="java">             String driverClass = &quot;com.mysql.jdbc.Driver&quot;;
+     File file = new File(&quot;mysql/mysql-connector-java-5.1.47.jar&quot;);
+     MyClassloader loader = new MyClassloader(new URL[]{file.toURL()});
+     Driver driver = (Driver) loader.loadClass(driverClass).newInstance();
+     Connection connect = driver.connect(url, properties);
+</code></pre>
+</li>
+</ol>
+]]></content>
+      <tags>
+        <tag>classLoader</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Java8 parallelStream 基础介绍</title>
+    <url>/2020/03/15/java8-de-parallelstream-ji-chu-jie-shao/</url>
+    <content><![CDATA[<h2 id="parallelStream-是什么？"><a href="#parallelStream-是什么？" class="headerlink" title="parallelStream 是什么？"></a>parallelStream 是什么？</h2><p>Java8中新增了Lambda语法，方便对数据进行快速迭代的流式运算，有的时候数据处理比较慢，这个时候我们就需要引入多线程来对任务进行分片操作，Stream提供了对应的方法就是parallelStream()，也就是<code>stream().parallel()</code>，这个时候就会将数据从串行流需改为并行流。这时候我们就会好奇，我们也没配置线程池，它默认的线程池大小是多少？有什么需要注意的地方？</p>
+<ul>
+<li><p>第一个问题它默认连接池是什么，大小是多大？</p>
+<p>先说结论，默认使用的连接池是 <strong><em>ForkJoinPool.commonPool</em></strong><br>连接池默认大小 <strong><em>Runtime.getRuntime().availableProcessors()</em></strong>(也就是你系统的处理器数量)<br>  我们做一个简单的测试，看看结论是否正确</p>
+<pre><code class="java">  public static void main (String[] args) {
+      Set&lt;Thread&gt; threads = new HashSet&lt;&gt;();
+      IntStream.rangeClosed(1,10).parallel().forEach(value -&gt; {
+          Thread thread = Thread.currentThread();
+          //输出当前线程的类型和名字，并打印正在处理的值
+           log.info(&quot;ThreadType:{},currentThread:{},Integer:{}&quot;,thread.getClass(),thread.getName(),value);
+           threads.add(thread);
+      });
+      //打印我们总共所使用到的线程集合
+      log.info(&quot;all threads:\n{}&quot;, threads.stream().map(Thread::getName).collect(Collectors.joining(&quot;\n&quot;)));
+  }
+</code></pre>
+<pre><code class="verilog">  java.util.concurrent.ForkJoinWorkerThread,currentThread:ForkJoinPool.commonPool-worker-5,Integer:5
+  java.util.concurrent.ForkJoinWorkerThread,currentThread:ForkJoinPool.commonPool-worker-1,Integer:3
+  java.lang.Thread,currentThread:main,Integer:7
+  java.util.concurrent.ForkJoinWorkerThread,currentThread:ForkJoinPool.commonPool-worker-5,Integer:4
+  java.util.concurrent.ForkJoinWorkerThread,currentThread:ForkJoinPool.commonPool-worker-3,Integer:2
+  java.util.concurrent.ForkJoinWorkerThread,currentThread:ForkJoinPool.commonPool-worker-7,Integer:8
+  java.lang.Thread,currentThread:main,Integer:10
+  java.util.concurrent.ForkJoinWorkerThread,currentThread:ForkJoinPool.commonPool-worker-6,Integer:6
+  java.util.concurrent.ForkJoinWorkerThread,currentThread:ForkJoinPool.commonPool-worker-4,Integer:1
+  java.util.concurrent.ForkJoinWorkerThread,currentThread:ForkJoinPool.commonPool-worker-2,Integer:9
+  all threads:
+  main
+  ForkJoinPool.commonPool-worker-7
+  ForkJoinPool.commonPool-worker-4
+  ForkJoinPool.commonPool-worker-1
+  ForkJoinPool.commonPool-worker-5
+  ForkJoinPool.commonPool-worker-2
+  ForkJoinPool.commonPool-worker-6
+  ForkJoinPool.commonPool-worker-3
+</code></pre>
+<p>  从日志中我们可以看到，parallelStream使用了主线程和ForkJoinPool所创建的ForkJoinWorkerThread线程，并且总的线程数也等于我当前电脑的线程数8个<br>  《java8实战》这么描述的：</p>
+</li>
+</ul>
+<blockquote>
+<p>并行流内部使用了默认的ForkJoinPool（7.2节会进一步讲到分支/合并框架），它默认的线程数量就是你的处理器数量，这个值是由Runtime.getRuntime().available- Processors()得到的。 但是你可以通过系统属性java.util.concurrent.ForkJoinPool.common. parallelism来改变线程池大小，如下所示： System.setProperty(“java.util.concurrent.ForkJoinPool.common.parallelism”,”12”); 这是一个全局设置，因此它将影响代码中所有的并行流。反过来说，目前还无法专为某个 并行流指定这个值。一般而言，让ForkJoinPool的大小等于处理器数量是个不错的默认值， 除非你有很好的理由，否则我们强烈建议你不要修改它。</p>
+</blockquote>
+<p>  如果我们要修改默认情况的并发数大小，就需要修改<code>java.util.concurrent.ForkJoinPool.common.parallelism</code> ,这个值是final类型的，也就是整个JVM中只允许修改一次，特别需要注意的是，多个parallelStream之间使用的是同一个默认的ForkJoinPool，所以最好不要把会阻塞线程的操作放在默认的池子中，否则会影响到其他默认的parallelStream。如果需要为单独的<em>parallelStream</em>指定并发数大小，就需要引入ForkJoinPool。</p>
+<pre><code class="java">     Set&lt;Thread&gt; threads = new HashSet&lt;&gt;();
+        IntStream intStream = IntStream.rangeClosed(1, 10);
+        threads.clear();
+        new ForkJoinPool(5).submit(() -&gt; intStream.parallel().forEach(value -&gt; {
+            Thread thread = Thread.currentThread();
+            //输出当前线程的类型和名字，并打印正在处理的值
+            log.info(&quot;currentThread:{},Integer:{}&quot;,thread.getName(),value);
+            threads.add(thread);
+        }));
+
+        //打印我们总共所使用到的线程集合
+        log.info(&quot;all threads:\n{}&quot;, threads.stream().map(Thread::getName).collect(Collectors.joining(&quot;\n&quot;)));
+</code></pre>
+<pre><code class="verilog">  currentThread:ForkJoinPool-1-worker-3,Integer:9
+    currentThread:ForkJoinPool-1-worker-2,Integer:3
+    currentThread:ForkJoinPool-1-worker-3,Integer:10
+    currentThread:ForkJoinPool-1-worker-3,Integer:8
+    currentThread:ForkJoinPool-1-worker-4,Integer:2
+    currentThread:ForkJoinPool-1-worker-1,Integer:7
+    currentThread:ForkJoinPool-1-worker-3,Integer:4
+    currentThread:ForkJoinPool-1-worker-4,Integer:1
+    currentThread:ForkJoinPool-1-worker-5,Integer:6
+    currentThread:ForkJoinPool-1-worker-2,Integer:5
+    all threads:
+    ForkJoinPool-1-worker-5
+    ForkJoinPool-1-worker-3
+    ForkJoinPool-1-worker-2
+    ForkJoinPool-1-worker-1
+    ForkJoinPool-1-worker-4
+</code></pre>
+<p>  从日志中我们可以看到，这个时候并发线程的数量已经被控制到5个了，并且是没有使用主线程来进行运算的</p>
+<h2 id="parallelStream的利弊"><a href="#parallelStream的利弊" class="headerlink" title="parallelStream的利弊"></a>parallelStream的利弊</h2><ul>
+<li>利：<ul>
+<li>直接使用lambda表达式，代码清晰整洁。</li>
+<li>能够直接使用forkAndJoin特性进行并行处理</li>
+</ul>
+</li>
+<li>弊：<ul>
+<li>在多线程场景中使用parallelStream是没有效果的，因为本来就是在争抢cpu的状态中，即使用上了它并不会有太大的提升，反而增加了线程切换带来的开销</li>
+<li>parallelStream不保证执行顺序，即使是使用了同步集合</li>
+</ul>
+</li>
+</ul>
+]]></content>
       <categories>
-          
-          <category> Java8 </category>
-          
+        <category>Java8</category>
       </categories>
-      
-      
-        <tags>
-            
-            <tag> Stream </tag>
-            
-        </tags>
-      
-    </entry>
-    
-    
-    
-    <entry>
-      <title>一.使用了并发工具类库，线程安全就高枕无忧了吗？</title>
-      <link href="/2020/03/14/yi.shi-yong-liao-bing-fa-gong-ju-lei-ku-xian-cheng-an-quan-jiu-gao-zhen-wu-you-liao-ma/"/>
-      <url>/2020/03/14/yi.shi-yong-liao-bing-fa-gong-ju-lei-ku-xian-cheng-an-quan-jiu-gao-zhen-wu-you-liao-ma/</url>
-      
-        <content type="html"><![CDATA[<h3 id="没有意识到线程重用导致用户信息错乱的Bug"><a href="#没有意识到线程重用导致用户信息错乱的Bug" class="headerlink" title="没有意识到线程重用导致用户信息错乱的Bug"></a>没有意识到线程重用导致用户信息错乱的Bug</h3><ul><li><p>ThrealLocal 会重复利用线程池的线程，将springBoot中的配置文件添加<code>server.tomcat.max-threads=1</code> 此时Tomcat只有一个线程在运行，这时候这段代码就会出现问题</p><pre><code class="java">@GetMapping(&quot;wrong&quot;)public Map&lt;String,Object&gt; wrong(@RequestParam(&quot;userId&quot;) Integer userId){    String before = Thread.currentThread().getName()+&quot;:&quot;+currentUser.get();    currentUser.set(userId);    String after = Thread.currentThread().getName()+&quot;:&quot;+currentUser.get();    Map&lt;String, Object&gt; map  = new HashMap&lt;&gt;();    map.put(&quot;before&quot;,before);    map.put(&quot;after&quot;,after);    return map;}</code></pre><p>在第二个请求的时候 会获取到第一次的<strong>UserID</strong> </p><pre><code class="json">{  &quot;before&quot;: &quot;http-nio-8080-exec-1:1&quot;,  &quot;after&quot;: &quot;http-nio-8080-exec-1:2&quot;}</code></pre><p>按理说，在设置用户信息之前第一次获取的值始终应该是 null，但我们要意识到，程序运行在 Tomcat 中，执行程序的线程是 Tomcat 的工作线程，而 Tomcat 的工作线程是基于线程池的。顾名思义，线程池会重用固定的几个线程，一旦<strong>线程重用</strong>，那么很可能首次从 ThreadLocal 获取的值是之前其他用户的请求遗留的值。这时，ThreadLocal 中的用户信息就是其他用户的信息。</p></li><li><p>不能认为没有<strong>显示</strong>的开启多线程或者使用线程池 就没有线程安全的风险。</p></li><li><p>线程创建的代价比较贵，所以服务器会节省这部分的开销，使用线程池进行处理请求，Tomcat默认的线程池大小是<em>200</em> 代码中如果只是临时使用ThreadLocal变量，需要在使用结束后手动置空，防止被后续的请求给复用。</p><pre><code class="java">  @GetMapping(&quot;right&quot;)    public Map&lt;String,Object&gt; right(@RequestParam(&quot;userId&quot;) Integer userId){        Map&lt;String, Object&gt; map;        try {            String before = Thread.currentThread().getName()+&quot;:&quot;+currentUser.get();            currentUser.set(userId);            String after = Thread.currentThread().getName()+&quot;:&quot;+currentUser.get();            map = new HashMap&lt;&gt;();            map.put(&quot;before&quot;,before);            map.put(&quot;after&quot;,after);            return map;        } finally {            currentUser.remove();        }    }</code></pre></li></ul><h3 id="使用了线程安全的并发工具，并不代表解决了所有线程安全问题"><a href="#使用了线程安全的并发工具，并不代表解决了所有线程安全问题" class="headerlink" title="使用了线程安全的并发工具，并不代表解决了所有线程安全问题"></a>使用了线程安全的并发工具，并不代表解决了所有线程安全问题</h3><ul><li><p><strong>ConcurrentHashMap</strong> 只保证原子性的读写是线程安全的， 不代表对多个操作之间的状态是一致的，如果有其他线程在同时操作它，此时仍需要手动进行加锁</p><pre><code class="java">    //线程个数    private static int THREAD_COUNT = 10;    // 总元素数量    private static int ITEM_COUNT = 1000;    //帮助方法，用来获得一个指定元素数量模拟数据的    private ConcurrentHashMap&lt;String,Long&gt; getData (int count) {        return LongStream                .rangeClosed(1, count)                .boxed()                .collect(Collectors                        .toConcurrentMap(i -&gt; UUID.randomUUID()                                .toString(),                                Function.identity(),                                (o1, o2) -&gt; o1, ConcurrentHashMap::new));    }@GetMapping(&quot;wrong&quot;)    public void wrong(){        ConcurrentHashMap&lt;String,Long&gt; concurrentHashMap = getData(ITEM_COUNT-100);        log.info(&quot;init Size{}&quot;,concurrentHashMap.size());        ForkJoinPool forkJoinPool = new ForkJoinPool(THREAD_COUNT);        forkJoinPool.execute(() -&gt; IntStream.rangeClosed(1,10).parallel().forEach(value -&gt; {            if (ITEM_COUNT - concurrentHashMap.size()&gt;0) {                int a = ITEM_COUNT - concurrentHashMap.size() ;                log.info(&quot;a size {}&quot;,a);                concurrentHashMap.putAll(getData(a));            }        }));        forkJoinPool.shutdown();        forkJoinPool.awaitQuiescence(1, TimeUnit.HOURS);        log.info(&quot;finish Size {}&quot;,concurrentHashMap.size());    }    </code></pre><pre><code class="verilog">INFO 33005 --- [nio-8080-exec-1] c.b.c.m.c.c.MapError: init Size900INFO 33005 --- [nio-8080-exec-1] c.b.c.m.c.c.MapError: a size 100INFO 33005 --- [onPool-worker-2] c.b.c.m.c.c.MapError: a size 100INFO 33005 --- [onPool-worker-4] c.b.c.m.c.c.MapError: a size 100INFO 33005 --- [onPool-worker-1] c.b.c.m.c.c.MapError: a size 100INFO 33005 --- [onPool-worker-5] c.b.c.m.c.c.MapError: a size 100INFO 33005 --- [onPool-worker-6] c.b.c.m.c.c.MapError: a size 100INFO 33005 --- [onPool-worker-3] c.b.c.m.c.c.MapError: a size 100INFO 33005 --- [onPool-worker-7] c.b.c.m.c.c.MapError: a size 100INFO 33005 --- [nio-8080-exec-1] c.b.c.m.c.c.MapError: finish Size 1700</code></pre><p>此时得到的1700 并不符合我们所需要的1000的目标值，说明这段代码存在线程不安全的问题。</p><pre><code class="java"> @GetMapping(&quot;right&quot;)    public void right(){        ConcurrentHashMap&lt;String,Long&gt; concurrentHashMap = getData(ITEM_COUNT-100);        log.info(&quot;init Size{}&quot;,concurrentHashMap.size());        ForkJoinPool forkJoinPool = new ForkJoinPool(THREAD_COUNT);        forkJoinPool.execute(() -&gt; IntStream.rangeClosed(1,10).parallel().forEach(value -&gt; {            //此处进行加锁，但是也丢失了并发的作用            synchronized (concurrentHashMap){                if (ITEM_COUNT - concurrentHashMap.size()&gt;0) {                    int a = ITEM_COUNT - concurrentHashMap.size() ;                    log.info(&quot;a size {}&quot;,a);                    concurrentHashMap.putAll(getData(a));                }            }        }));        forkJoinPool.shutdown();        forkJoinPool.awaitQuiescence(1, TimeUnit.HOURS);        log.info(&quot;finish Size {}&quot;,concurrentHashMap.size());    }</code></pre><p>对<em>concurrentHashMap</em>进行加锁肯定是能够解决问题的，但是这么一来还有必要选择使用<strong>ConcurrentHashMap</strong>？</p><p>直接使用<strong>HashMap</strong>加锁也有同样的效果,说明在此处的<strong>ConcurrentHashMap</strong>是没必要的,是错误理解了它的作用而得到的错误用法。</p></li></ul><h3 id="没有充分了解并发工具的特性，从而无法发挥其威力"><a href="#没有充分了解并发工具的特性，从而无法发挥其威力" class="headerlink" title="没有充分了解并发工具的特性，从而无法发挥其威力"></a>没有充分了解并发工具的特性，从而无法发挥其威力</h3><ul><li><p><strong>ConCurrentHashMap</strong> 的一个常用的场景是用于统计 Map中key出现的次数</p></li><li><p>假设使用10个并发线程往 Map中写入值，Key的范围是0-9，循环写入1000W次，Value为Key出现的次数</p></li><li><p>一般做法就是直接map进行循环，为了保证不重复初始化Key，这时候为Key的累加加上锁</p><pre><code class="java"> private Map&lt;String, Long&gt; normaluse() throws InterruptedException {        Map&lt;String, Long&gt; freqs = new HashMap&lt;&gt;(ITEM_COUNT);        ForkJoinPool forkJoinPool = new ForkJoinPool(THREAD_COUNT);        forkJoinPool.execute(() -&gt; IntStream.rangeClosed(1, LOOP_COUNT).parallel().forEach(i -&gt; {                    //获得一个随机的Key                    String key = &quot;item&quot; + ThreadLocalRandom.current().nextInt(ITEM_COUNT);                    synchronized (freqs) {                        if (freqs.containsKey(key)) {                            //Key存在则+1                            freqs.put(key, freqs.get(key) + 1);                        } else {                            //Key不存在则初始化为1                            freqs.put(key, 1L);                        }                    }                }        ));        forkJoinPool.shutdown();        forkJoinPool.awaitTermination(1, TimeUnit.HOURS);        return freqs;    }</code></pre></li><li><p>第二种做法就是使用ConcurrentHashMap 内置的 conputeIfAbsent 方法进行增加</p><pre><code class="java"> private Map&lt;String, Long&gt; gooduse() throws InterruptedException {        ConcurrentHashMap&lt;String, LongAdder&gt; freqs = new ConcurrentHashMap&lt;&gt;(ITEM_COUNT);        ForkJoinPool forkJoinPool = new ForkJoinPool(THREAD_COUNT);        forkJoinPool.execute(() -&gt; IntStream.rangeClosed(1, LOOP_COUNT).parallel().forEach(i -&gt; {                    String key = &quot;item&quot; + ThreadLocalRandom.current().nextInt(ITEM_COUNT);                    //利用computeIfAbsent()方法来实例化LongAdder，然后利用LongAdder来进行线程安全计数                    freqs.computeIfAbsent(key, k -&gt; new LongAdder()).increment();                }        ));        forkJoinPool.shutdown();        forkJoinPool.awaitTermination(1, TimeUnit.HOURS);        //因为我们的Value是LongAdder而不是Long，所以需要做一次转换才能返回        return freqs.entrySet().stream()                .collect(Collectors.toMap(                        Map.Entry::getKey,                        e -&gt; e.getValue().longValue())                );    }</code></pre></li><li><p>这两种做法都能满足我们统计的需求，我们通过<em>StopWatch</em> 来对两个方式的速度进行统计</p><pre><code class="java"> @GetMapping(&quot;/compare&quot;)    public void compareTime() throws InterruptedException {        StopWatch stopWatch = new StopWatch();        stopWatch.start(&quot;goodUse&quot;);        Map&lt;String, Long&gt; goodUse = goodUse();        stopWatch.stop();        Assert.isTrue(goodUse.size() == ITEM_COUNT,&quot;goodUse count Err&quot;);        Assert.isTrue(goodUse.values().stream()                .mapToLong(value -&gt; value)                .reduce(0,Long::sum)==LOOP_COUNT,&quot;goodUse count Err&quot;);        stopWatch.start(&quot;normalUse&quot;);        Map&lt;String, Long&gt; normalUse = normalUse();        stopWatch.stop();        Assert.isTrue(normalUse.size() == ITEM_COUNT,&quot;normalUse count Err&quot;);        Assert.isTrue(normalUse.values().stream()                .mapToLong(value -&gt; value)                .reduce(0,Long::sum)==LOOP_COUNT,&quot;normalUse count Err&quot;);        log.info(stopWatch.prettyPrint());    }    </code></pre><pre><code class="verilog">StopWatch &#39;&#39;: running time = 17247637770 ns---------------------------------------------ns         %     Task name---------------------------------------------1860003595  011%  goodUse15387634175  089%  normalUse</code></pre><p>由日志可知，两者时间上的差距将近9倍。</p></li></ul><h3 id="没有认清并发工具的使用场景，因而导致性能问题"><a href="#没有认清并发工具的使用场景，因而导致性能问题" class="headerlink" title="没有认清并发工具的使用场景，因而导致性能问题"></a>没有认清并发工具的使用场景，因而导致性能问题</h3><ul><li><p><strong>CopyOnWrite</strong> （目前我暂时没使用过，这儿就直接引用专栏老师的例子）</p><ul><li>这个是在写入的时候直接复制一份数据进行写入，然后将旧的引用指向新的队列，这样可以不用加锁，在写的同时，读操作依然可以读取旧的数据，Concurrent容器则不能做到这一点。</li><li>但是也有两个缺点：<ul><li>1.因为对旧的数据进行了一份拷贝，所以占用的内存比较大，等于是空间换时间。</li><li>2.不适用于对数据一致性时效要求比较高的场景，因为他只保证了数据的最终一致性，Concurrent则是保证了数据的随时一致性，<em>适用于黑名单缓存等对时效性要求没有那么高的场景</em>。</li></ul></li></ul></li><li><p>我们发现一段简单的非数据库操作的业务逻辑，消耗了超出预期的时间，在修改数据时操作本地缓存比回写数据库慢许多。查看代码发现，开发同学使用了 CopyOnWriteArrayList 来缓存大量的数据，而数据变化又比较频繁</p></li><li><p>在 Java 中，<strong>CopyOnWriteArrayList 虽然是一个线程安全的 ArrayList，但因为其实现方式是，每次修改数据时都会复制一份数据出来，所以有明显的适用场景，即读多写少或者说希望无锁读的场景</strong>。</p></li><li><p>如果我们要使用 CopyOnWriteArrayList，那一定是因为场景需要而不是因为足够酷炫。如果读写比例均衡或者有大量写操作的话，使用 CopyOnWriteArrayList 的性能会非常糟糕。</p></li><li><p>我们写一段测试代码，来比较下使用 CopyOnWriteArrayList 和普通加锁方式 ArrayList 的读写性能吧。在这段代码中我们针对并发读和并发写分别写了一个测试方法，测试两者一定次数的写或读操作的耗时。</p><pre><code class="java"> //测试并发写的性能    @GetMapping(&quot;write&quot;)    public Map testWrite() {        List&lt;Integer&gt; copyOnWriteArrayList = new CopyOnWriteArrayList&lt;&gt;();        List&lt;Integer&gt; synchronizedList = Collections.synchronizedList(new ArrayList&lt;&gt;());        StopWatch stopWatch = new StopWatch();        int loopCount = 100000;        stopWatch.start(&quot;Write:copyOnWriteArrayList&quot;);        //循环100000次并发往CopyOnWriteArrayList写入随机元素        IntStream.rangeClosed(1, loopCount).parallel().forEach(i -&gt; copyOnWriteArrayList.add(ThreadLocalRandom.current().nextInt(loopCount)));        stopWatch.stop();        stopWatch.start(&quot;Write:synchronizedList&quot;);        //循环100000次并发往加锁的ArrayList写入随机元素        IntStream.rangeClosed(1, loopCount).parallel().forEach(i -&gt; synchronizedList.add(ThreadLocalRandom.current().nextInt(loopCount)));        stopWatch.stop();        log.info(stopWatch.prettyPrint());        Map result = new HashMap();        result.put(&quot;copyOnWriteArrayList&quot;, copyOnWriteArrayList.size());        result.put(&quot;synchronizedList&quot;, synchronizedList.size());        return result;    }    //帮助方法用来填充List    private void addAll(List&lt;Integer&gt; list) {        list.addAll(IntStream.rangeClosed(1, 1000000).boxed().collect(Collectors.toList()));    }    //测试并发读的性能    @GetMapping(&quot;read&quot;)    public Map testRead() {        //创建两个测试对象        List&lt;Integer&gt; copyOnWriteArrayList = new CopyOnWriteArrayList&lt;&gt;();        List&lt;Integer&gt; synchronizedList = Collections.synchronizedList(new ArrayList&lt;&gt;());        //填充数据        addAll(copyOnWriteArrayList);        addAll(synchronizedList);        StopWatch stopWatch = new StopWatch();        int loopCount = 1000000;        int count = copyOnWriteArrayList.size();        stopWatch.start(&quot;Read:copyOnWriteArrayList&quot;);        //循环1000000次并发从CopyOnWriteArrayList随机查询元素        IntStream.rangeClosed(1, loopCount).parallel().forEach(i -&gt; copyOnWriteArrayList.get(ThreadLocalRandom.current().nextInt(count)));        stopWatch.stop();        stopWatch.start(&quot;Read:synchronizedList&quot;);        //循环1000000次并发从加锁的ArrayList随机查询元素        IntStream.range(0, loopCount).parallel().forEach(i -&gt; synchronizedList.get(ThreadLocalRandom.current().nextInt(count)));        stopWatch.stop();        log.info(stopWatch.prettyPrint());        Map result = new HashMap();        result.put(&quot;copyOnWriteArrayList&quot;, copyOnWriteArrayList.size());        result.put(&quot;synchronizedList&quot;, synchronizedList.size());        return result;    }</code></pre></li></ul><ul><li><p>运行程序可以看到，大量写的场景（10 万次 add 操作），CopyOnWriteArray 几乎比同步的 ArrayList 慢一百倍：</p><pre><code class="verilog">StopWatch &#39;&#39;: running time = 4207613566 ns---------------------------------------------ns         %     Task name---------------------------------------------4117309161  098%  Write:copyOnWriteArrayList090304405  002%  Write:synchronizedList</code></pre></li><li><p>而在大量读的场景下（100 万次 get 操作），CopyOnWriteArray 又比同步的 ArrayList 快十倍以上</p><pre><code class="verilog">StopWatch &#39;&#39;: running time = 416496271 ns---------------------------------------------ns         %     Task name---------------------------------------------028776967  007%  Read:copyOnWriteArrayList387719304  093%  Read:synchronizedList</code></pre><p>以 add 方法为例，每次 add 时，都会用 Arrays.copyOf 创建一个新数组，频繁 add 时内存的申请释放消耗会很大：</p><pre><code class="java">    /**     * Appends the specified element to the end of this list.     *     * @param e element to be appended to this list     * @return {@code true} (as specified by {@link Collection#add})     */    public boolean add(E e) {        synchronized (lock) {            Object[] elements = getArray();            int len = elements.length;            Object[] newElements = Arrays.copyOf(elements, len + 1);            newElements[len] = e;            setArray(newElements);            return true;        }    }    </code></pre><p>get方法则相反，因为在读取的时候CopyOnWriteArray不需要加锁，所以总体开销是比加锁的ArrayList低的。</p></li></ul><h3 id="思考题"><a href="#思考题" class="headerlink" title="思考题"></a>思考题</h3><ul><li><p>我们多次用到了 ThreadLocalRandom，你觉得是否可以把它的实例设置到静态变量中，在多线程情况下重用呢？</p><p>不可以，结果是除了初始化 ThreadLocalRandom 的主线程获取的随机值是无模式的（调用者不可预测下个返回值，满足我们对伪随机的要求）之外，其他线程获得随机值都不是相互独立的（本质上来说，是因为他们用于生成随机数的种子 seed 的值可预测的，为 i <em> gamma，其中 i 是当前线程调用随机数生成方法次数，而 gamma 是 ThreadLocalRandom 类的一个 long 静态字段值）。例如，一个有趣的现象是，所有非初始化 ThreadLocalRandom 实例的线程如果调用相同次数的 nextInt() 方法，他们得到的随机数串是完全相同的。<br>造成这样现象的原因在于，ThreadLocalRandom 类维护了一个类单例字段，线程通过调用 ThreadLocalRandom#current() 方法来获取 ThreadLocalRandom 单例，然后以线程维护的实例字段 threadLocalRandomSeed 为种子生成下一个随机数和下一个种子值。<br>那么既然是单例模式，为什么多线程共用主线程初始化的实例就会出问题呢。问题就在于 current 方法，线程在调用 current() 方法的时候，会根据用每个线程的 thread 的一个实例字段 threadLocalRandomProbe 是否为 0 来判断是否当前线程实例是否为第一次调用随机数生成方法，从而决定是否要给当前线程初始化一个随机的 threadLocalRandomSeed 种子值。因此，如果其他线程绕过 current 方法直接调用随机数方法，那么它的种子值就是 0, 1 </em> gamma, 2 * gamma… 因此也就是可预测的了。</p></li><li><p>ConcurrentHashMap 还提供了 putIfAbsent 方法，你能否通过查阅JDK 文档，说说 computeIfAbsent 和 putIfAbsent 方法的区别？</p><p>computeIfAbsent和putIfAbsent区别是三点：</p><ol><li>当Key存在的时候，如果Value获取比较昂贵的话，putIfAbsent就白白浪费时间在获取这个昂贵的Value上（这个点特别注意）</li><li>Key不存在的时候，putIfAbsent返回null，小心空指针，而computeIfAbsent返回计算后的值</li><li>当Key不存在的时候，putIfAbsent允许put null进去，而computeIfAbsent不能，之后进行containsKey查询是有区别的（当然了，此条针对HashMap，ConcurrentHashMap不允许put null value进去）</li></ol></li></ul>]]></content>
-      
-      
+      <tags>
+        <tag>Stream</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>一.使用了并发工具类库，线程安全就高枕无忧了吗？</title>
+    <url>/2020/03/14/yi.shi-yong-liao-bing-fa-gong-ju-lei-ku-xian-cheng-an-quan-jiu-gao-zhen-wu-you-liao-ma/</url>
+    <content><![CDATA[<h3 id="没有意识到线程重用导致用户信息错乱的Bug"><a href="#没有意识到线程重用导致用户信息错乱的Bug" class="headerlink" title="没有意识到线程重用导致用户信息错乱的Bug"></a>没有意识到线程重用导致用户信息错乱的Bug</h3><ul>
+<li><p>ThrealLocal 会重复利用线程池的线程，将springBoot中的配置文件添加<code>server.tomcat.max-threads=1</code> 此时Tomcat只有一个线程在运行，这时候这段代码就会出现问题</p>
+<pre><code class="java">@GetMapping(&quot;wrong&quot;)
+public Map&lt;String,Object&gt; wrong(@RequestParam(&quot;userId&quot;) Integer userId){
+    String before = Thread.currentThread().getName()+&quot;:&quot;+currentUser.get();
+    currentUser.set(userId);
+    String after = Thread.currentThread().getName()+&quot;:&quot;+currentUser.get();
+    Map&lt;String, Object&gt; map  = new HashMap&lt;&gt;();
+
+    map.put(&quot;before&quot;,before);
+    map.put(&quot;after&quot;,after);
+
+    return map;
+}
+</code></pre>
+<p>在第二个请求的时候 会获取到第一次的<strong>UserID</strong> </p>
+<pre><code class="json">{
+  &quot;before&quot;: &quot;http-nio-8080-exec-1:1&quot;,
+  &quot;after&quot;: &quot;http-nio-8080-exec-1:2&quot;
+}
+</code></pre>
+<p>按理说，在设置用户信息之前第一次获取的值始终应该是 null，但我们要意识到，程序运行在 Tomcat 中，执行程序的线程是 Tomcat 的工作线程，而 Tomcat 的工作线程是基于线程池的。顾名思义，线程池会重用固定的几个线程，一旦<strong>线程重用</strong>，那么很可能首次从 ThreadLocal 获取的值是之前其他用户的请求遗留的值。这时，ThreadLocal 中的用户信息就是其他用户的信息。</p>
+</li>
+<li><p>不能认为没有<strong>显示</strong>的开启多线程或者使用线程池 就没有线程安全的风险。</p>
+</li>
+<li><p>线程创建的代价比较贵，所以服务器会节省这部分的开销，使用线程池进行处理请求，Tomcat默认的线程池大小是<em>200</em> 代码中如果只是临时使用ThreadLocal变量，需要在使用结束后手动置空，防止被后续的请求给复用。</p>
+<pre><code class="java">  @GetMapping(&quot;right&quot;)
+    public Map&lt;String,Object&gt; right(@RequestParam(&quot;userId&quot;) Integer userId){
+
+        Map&lt;String, Object&gt; map;
+        try {
+            String before = Thread.currentThread().getName()+&quot;:&quot;+currentUser.get();
+            currentUser.set(userId);
+            String after = Thread.currentThread().getName()+&quot;:&quot;+currentUser.get();
+            map = new HashMap&lt;&gt;();
+            map.put(&quot;before&quot;,before);
+            map.put(&quot;after&quot;,after);
+            return map;
+        } finally {
+            currentUser.remove();
+        }
+    }
+</code></pre>
+</li>
+</ul>
+<h3 id="使用了线程安全的并发工具，并不代表解决了所有线程安全问题"><a href="#使用了线程安全的并发工具，并不代表解决了所有线程安全问题" class="headerlink" title="使用了线程安全的并发工具，并不代表解决了所有线程安全问题"></a>使用了线程安全的并发工具，并不代表解决了所有线程安全问题</h3><ul>
+<li><p><strong>ConcurrentHashMap</strong> 只保证原子性的读写是线程安全的， 不代表对多个操作之间的状态是一致的，如果有其他线程在同时操作它，此时仍需要手动进行加锁</p>
+<pre><code class="java">    //线程个数
+    private static int THREAD_COUNT = 10;
+    // 总元素数量
+    private static int ITEM_COUNT = 1000;
+    //帮助方法，用来获得一个指定元素数量模拟数据的
+    private ConcurrentHashMap&lt;String,Long&gt; getData (int count) {
+        return LongStream
+                .rangeClosed(1, count)
+                .boxed()
+                .collect(Collectors
+                        .toConcurrentMap(i -&gt; UUID.randomUUID()
+                                .toString(),
+                                Function.identity(),
+                                (o1, o2) -&gt; o1, ConcurrentHashMap::new));
+    }
+
+@GetMapping(&quot;wrong&quot;)
+    public void wrong(){
+        ConcurrentHashMap&lt;String,Long&gt; concurrentHashMap = getData(ITEM_COUNT-100);
+        log.info(&quot;init Size{}&quot;,concurrentHashMap.size());
+        ForkJoinPool forkJoinPool = new ForkJoinPool(THREAD_COUNT);
+        forkJoinPool.execute(() -&gt; IntStream.rangeClosed(1,10).parallel().forEach(value -&gt; {
+            if (ITEM_COUNT - concurrentHashMap.size()&gt;0) {
+                int a = ITEM_COUNT - concurrentHashMap.size() ;
+                log.info(&quot;a size {}&quot;,a);
+                concurrentHashMap.putAll(getData(a));
+            }
+        }));
+        forkJoinPool.shutdown();
+        forkJoinPool.awaitQuiescence(1, TimeUnit.HOURS);
+        log.info(&quot;finish Size {}&quot;,concurrentHashMap.size());
+    }    
+</code></pre>
+<pre><code class="verilog">INFO 33005 --- [nio-8080-exec-1] c.b.c.m.c.c.MapError: init Size900
+INFO 33005 --- [nio-8080-exec-1] c.b.c.m.c.c.MapError: a size 100
+INFO 33005 --- [onPool-worker-2] c.b.c.m.c.c.MapError: a size 100
+INFO 33005 --- [onPool-worker-4] c.b.c.m.c.c.MapError: a size 100
+INFO 33005 --- [onPool-worker-1] c.b.c.m.c.c.MapError: a size 100
+INFO 33005 --- [onPool-worker-5] c.b.c.m.c.c.MapError: a size 100
+INFO 33005 --- [onPool-worker-6] c.b.c.m.c.c.MapError: a size 100
+INFO 33005 --- [onPool-worker-3] c.b.c.m.c.c.MapError: a size 100
+INFO 33005 --- [onPool-worker-7] c.b.c.m.c.c.MapError: a size 100
+INFO 33005 --- [nio-8080-exec-1] c.b.c.m.c.c.MapError: finish Size 1700
+</code></pre>
+<p>此时得到的1700 并不符合我们所需要的1000的目标值，说明这段代码存在线程不安全的问题。</p>
+<pre><code class="java"> @GetMapping(&quot;right&quot;)
+    public void right(){
+        ConcurrentHashMap&lt;String,Long&gt; concurrentHashMap = getData(ITEM_COUNT-100);
+        log.info(&quot;init Size{}&quot;,concurrentHashMap.size());
+        ForkJoinPool forkJoinPool = new ForkJoinPool(THREAD_COUNT);
+        forkJoinPool.execute(() -&gt; IntStream.rangeClosed(1,10).parallel().forEach(value -&gt; {
+            //此处进行加锁，但是也丢失了并发的作用
+            synchronized (concurrentHashMap){
+                if (ITEM_COUNT - concurrentHashMap.size()&gt;0) {
+                    int a = ITEM_COUNT - concurrentHashMap.size() ;
+                    log.info(&quot;a size {}&quot;,a);
+                    concurrentHashMap.putAll(getData(a));
+                }
+            }
+        }));
+        forkJoinPool.shutdown();
+        forkJoinPool.awaitQuiescence(1, TimeUnit.HOURS);
+        log.info(&quot;finish Size {}&quot;,concurrentHashMap.size());
+    }
+</code></pre>
+<p>对<em>concurrentHashMap</em>进行加锁肯定是能够解决问题的，但是这么一来还有必要选择使用<strong>ConcurrentHashMap</strong>？</p>
+<p>直接使用<strong>HashMap</strong>加锁也有同样的效果,说明在此处的<strong>ConcurrentHashMap</strong>是没必要的,是错误理解了它的作用而得到的错误用法。</p>
+</li>
+</ul>
+<h3 id="没有充分了解并发工具的特性，从而无法发挥其威力"><a href="#没有充分了解并发工具的特性，从而无法发挥其威力" class="headerlink" title="没有充分了解并发工具的特性，从而无法发挥其威力"></a>没有充分了解并发工具的特性，从而无法发挥其威力</h3><ul>
+<li><p><strong>ConCurrentHashMap</strong> 的一个常用的场景是用于统计 Map中key出现的次数</p>
+</li>
+<li><p>假设使用10个并发线程往 Map中写入值，Key的范围是0-9，循环写入1000W次，Value为Key出现的次数</p>
+</li>
+<li><p>一般做法就是直接map进行循环，为了保证不重复初始化Key，这时候为Key的累加加上锁</p>
+<pre><code class="java"> private Map&lt;String, Long&gt; normaluse() throws InterruptedException {
+        Map&lt;String, Long&gt; freqs = new HashMap&lt;&gt;(ITEM_COUNT);
+        ForkJoinPool forkJoinPool = new ForkJoinPool(THREAD_COUNT);
+        forkJoinPool.execute(() -&gt; IntStream.rangeClosed(1, LOOP_COUNT).parallel().forEach(i -&gt; {
+                    //获得一个随机的Key
+                    String key = &quot;item&quot; + ThreadLocalRandom.current().nextInt(ITEM_COUNT);
+                    synchronized (freqs) {
+                        if (freqs.containsKey(key)) {
+                            //Key存在则+1
+                            freqs.put(key, freqs.get(key) + 1);
+                        } else {
+                            //Key不存在则初始化为1
+                            freqs.put(key, 1L);
+                        }
+                    }
+                }
+        ));
+        forkJoinPool.shutdown();
+        forkJoinPool.awaitTermination(1, TimeUnit.HOURS);
+        return freqs;
+    }
+</code></pre>
+</li>
+<li><p>第二种做法就是使用ConcurrentHashMap 内置的 conputeIfAbsent 方法进行增加</p>
+<pre><code class="java"> private Map&lt;String, Long&gt; gooduse() throws InterruptedException {
+        ConcurrentHashMap&lt;String, LongAdder&gt; freqs = new ConcurrentHashMap&lt;&gt;(ITEM_COUNT);
+        ForkJoinPool forkJoinPool = new ForkJoinPool(THREAD_COUNT);
+        forkJoinPool.execute(() -&gt; IntStream.rangeClosed(1, LOOP_COUNT).parallel().forEach(i -&gt; {
+                    String key = &quot;item&quot; + ThreadLocalRandom.current().nextInt(ITEM_COUNT);
+                    //利用computeIfAbsent()方法来实例化LongAdder，然后利用LongAdder来进行线程安全计数
+                    freqs.computeIfAbsent(key, k -&gt; new LongAdder()).increment();
+                }
+        ));
+        forkJoinPool.shutdown();
+        forkJoinPool.awaitTermination(1, TimeUnit.HOURS);
+        //因为我们的Value是LongAdder而不是Long，所以需要做一次转换才能返回
+        return freqs.entrySet().stream()
+                .collect(Collectors.toMap(
+                        Map.Entry::getKey,
+                        e -&gt; e.getValue().longValue())
+                );
+    }
+</code></pre>
+</li>
+<li><p>这两种做法都能满足我们统计的需求，我们通过<em>StopWatch</em> 来对两个方式的速度进行统计</p>
+<pre><code class="java"> @GetMapping(&quot;/compare&quot;)
+    public void compareTime() throws InterruptedException {
+
+        StopWatch stopWatch = new StopWatch();
+        stopWatch.start(&quot;goodUse&quot;);
+        Map&lt;String, Long&gt; goodUse = goodUse();
+        stopWatch.stop();
+        Assert.isTrue(goodUse.size() == ITEM_COUNT,&quot;goodUse count Err&quot;);
+        Assert.isTrue(goodUse.values().stream()
+                .mapToLong(value -&gt; value)
+                .reduce(0,Long::sum)==LOOP_COUNT,&quot;goodUse count Err&quot;);
+
+        stopWatch.start(&quot;normalUse&quot;);
+        Map&lt;String, Long&gt; normalUse = normalUse();
+        stopWatch.stop();
+        Assert.isTrue(normalUse.size() == ITEM_COUNT,&quot;normalUse count Err&quot;);
+        Assert.isTrue(normalUse.values().stream()
+                .mapToLong(value -&gt; value)
+                .reduce(0,Long::sum)==LOOP_COUNT,&quot;normalUse count Err&quot;);
+
+        log.info(stopWatch.prettyPrint());
+
+    }    
+</code></pre>
+<pre><code class="verilog">StopWatch &#39;&#39;: running time = 17247637770 ns
+---------------------------------------------
+ns         %     Task name
+---------------------------------------------
+1860003595  011%  goodUse
+15387634175  089%  normalUse
+</code></pre>
+<p>由日志可知，两者时间上的差距将近9倍。</p>
+</li>
+</ul>
+<h3 id="没有认清并发工具的使用场景，因而导致性能问题"><a href="#没有认清并发工具的使用场景，因而导致性能问题" class="headerlink" title="没有认清并发工具的使用场景，因而导致性能问题"></a>没有认清并发工具的使用场景，因而导致性能问题</h3><ul>
+<li><p><strong>CopyOnWrite</strong> （目前我暂时没使用过，这儿就直接引用专栏老师的例子）</p>
+<ul>
+<li>这个是在写入的时候直接复制一份数据进行写入，然后将旧的引用指向新的队列，这样可以不用加锁，在写的同时，读操作依然可以读取旧的数据，Concurrent容器则不能做到这一点。</li>
+<li>但是也有两个缺点：<ul>
+<li>1.因为对旧的数据进行了一份拷贝，所以占用的内存比较大，等于是空间换时间。</li>
+<li>2.不适用于对数据一致性时效要求比较高的场景，因为他只保证了数据的最终一致性，Concurrent则是保证了数据的随时一致性，<em>适用于黑名单缓存等对时效性要求没有那么高的场景</em>。</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><p>我们发现一段简单的非数据库操作的业务逻辑，消耗了超出预期的时间，在修改数据时操作本地缓存比回写数据库慢许多。查看代码发现，开发同学使用了 CopyOnWriteArrayList 来缓存大量的数据，而数据变化又比较频繁</p>
+</li>
+<li><p>在 Java 中，<strong>CopyOnWriteArrayList 虽然是一个线程安全的 ArrayList，但因为其实现方式是，每次修改数据时都会复制一份数据出来，所以有明显的适用场景，即读多写少或者说希望无锁读的场景</strong>。</p>
+</li>
+<li><p>如果我们要使用 CopyOnWriteArrayList，那一定是因为场景需要而不是因为足够酷炫。如果读写比例均衡或者有大量写操作的话，使用 CopyOnWriteArrayList 的性能会非常糟糕。</p>
+</li>
+<li><p>我们写一段测试代码，来比较下使用 CopyOnWriteArrayList 和普通加锁方式 ArrayList 的读写性能吧。在这段代码中我们针对并发读和并发写分别写了一个测试方法，测试两者一定次数的写或读操作的耗时。</p>
+<pre><code class="java"> //测试并发写的性能
+    @GetMapping(&quot;write&quot;)
+    public Map testWrite() {
+        List&lt;Integer&gt; copyOnWriteArrayList = new CopyOnWriteArrayList&lt;&gt;();
+        List&lt;Integer&gt; synchronizedList = Collections.synchronizedList(new ArrayList&lt;&gt;());
+        StopWatch stopWatch = new StopWatch();
+        int loopCount = 100000;
+        stopWatch.start(&quot;Write:copyOnWriteArrayList&quot;);
+        //循环100000次并发往CopyOnWriteArrayList写入随机元素
+        IntStream.rangeClosed(1, loopCount).parallel().forEach(i -&gt; copyOnWriteArrayList.add(ThreadLocalRandom.current().nextInt(loopCount)));
+        stopWatch.stop();
+        stopWatch.start(&quot;Write:synchronizedList&quot;);
+        //循环100000次并发往加锁的ArrayList写入随机元素
+        IntStream.rangeClosed(1, loopCount).parallel().forEach(i -&gt; synchronizedList.add(ThreadLocalRandom.current().nextInt(loopCount)));
+        stopWatch.stop();
+        log.info(stopWatch.prettyPrint());
+        Map result = new HashMap();
+        result.put(&quot;copyOnWriteArrayList&quot;, copyOnWriteArrayList.size());
+        result.put(&quot;synchronizedList&quot;, synchronizedList.size());
+        return result;
+    }
+
+    //帮助方法用来填充List
+    private void addAll(List&lt;Integer&gt; list) {
+        list.addAll(IntStream.rangeClosed(1, 1000000).boxed().collect(Collectors.toList()));
+    }
+
+    //测试并发读的性能
+    @GetMapping(&quot;read&quot;)
+    public Map testRead() {
+        //创建两个测试对象
+        List&lt;Integer&gt; copyOnWriteArrayList = new CopyOnWriteArrayList&lt;&gt;();
+        List&lt;Integer&gt; synchronizedList = Collections.synchronizedList(new ArrayList&lt;&gt;());
+        //填充数据
+        addAll(copyOnWriteArrayList);
+        addAll(synchronizedList);
+        StopWatch stopWatch = new StopWatch();
+        int loopCount = 1000000;
+        int count = copyOnWriteArrayList.size();
+        stopWatch.start(&quot;Read:copyOnWriteArrayList&quot;);
+        //循环1000000次并发从CopyOnWriteArrayList随机查询元素
+        IntStream.rangeClosed(1, loopCount).parallel().forEach(i -&gt; copyOnWriteArrayList.get(ThreadLocalRandom.current().nextInt(count)));
+        stopWatch.stop();
+        stopWatch.start(&quot;Read:synchronizedList&quot;);
+        //循环1000000次并发从加锁的ArrayList随机查询元素
+        IntStream.range(0, loopCount).parallel().forEach(i -&gt; synchronizedList.get(ThreadLocalRandom.current().nextInt(count)));
+        stopWatch.stop();
+        log.info(stopWatch.prettyPrint());
+        Map result = new HashMap();
+        result.put(&quot;copyOnWriteArrayList&quot;, copyOnWriteArrayList.size());
+        result.put(&quot;synchronizedList&quot;, synchronizedList.size());
+        return result;
+    }
+</code></pre>
+</li>
+</ul>
+<ul>
+<li><p>运行程序可以看到，大量写的场景（10 万次 add 操作），CopyOnWriteArray 几乎比同步的 ArrayList 慢一百倍：</p>
+<pre><code class="verilog">StopWatch &#39;&#39;: running time = 4207613566 ns
+---------------------------------------------
+ns         %     Task name
+---------------------------------------------
+4117309161  098%  Write:copyOnWriteArrayList
+090304405  002%  Write:synchronizedList
+</code></pre>
+</li>
+<li><p>而在大量读的场景下（100 万次 get 操作），CopyOnWriteArray 又比同步的 ArrayList 快十倍以上</p>
+<pre><code class="verilog">StopWatch &#39;&#39;: running time = 416496271 ns
+---------------------------------------------
+ns         %     Task name
+---------------------------------------------
+028776967  007%  Read:copyOnWriteArrayList
+387719304  093%  Read:synchronizedList
+</code></pre>
+<p>以 add 方法为例，每次 add 时，都会用 Arrays.copyOf 创建一个新数组，频繁 add 时内存的申请释放消耗会很大：</p>
+<pre><code class="java">    /**
+     * Appends the specified element to the end of this list.
+     *
+     * @param e element to be appended to this list
+     * @return {@code true} (as specified by {@link Collection#add})
+     */
+    public boolean add(E e) {
+        synchronized (lock) {
+            Object[] elements = getArray();
+            int len = elements.length;
+            Object[] newElements = Arrays.copyOf(elements, len + 1);
+            newElements[len] = e;
+            setArray(newElements);
+            return true;
+        }
+    }    
+</code></pre>
+<p>get方法则相反，因为在读取的时候CopyOnWriteArray不需要加锁，所以总体开销是比加锁的ArrayList低的。</p>
+</li>
+</ul>
+<h3 id="思考题"><a href="#思考题" class="headerlink" title="思考题"></a>思考题</h3><ul>
+<li><p>我们多次用到了 ThreadLocalRandom，你觉得是否可以把它的实例设置到静态变量中，在多线程情况下重用呢？</p>
+<p>不可以，结果是除了初始化 ThreadLocalRandom 的主线程获取的随机值是无模式的（调用者不可预测下个返回值，满足我们对伪随机的要求）之外，其他线程获得随机值都不是相互独立的（本质上来说，是因为他们用于生成随机数的种子 seed 的值可预测的，为 i <em> gamma，其中 i 是当前线程调用随机数生成方法次数，而 gamma 是 ThreadLocalRandom 类的一个 long 静态字段值）。例如，一个有趣的现象是，所有非初始化 ThreadLocalRandom 实例的线程如果调用相同次数的 nextInt() 方法，他们得到的随机数串是完全相同的。<br>造成这样现象的原因在于，ThreadLocalRandom 类维护了一个类单例字段，线程通过调用 ThreadLocalRandom#current() 方法来获取 ThreadLocalRandom 单例，然后以线程维护的实例字段 threadLocalRandomSeed 为种子生成下一个随机数和下一个种子值。<br>那么既然是单例模式，为什么多线程共用主线程初始化的实例就会出问题呢。问题就在于 current 方法，线程在调用 current() 方法的时候，会根据用每个线程的 thread 的一个实例字段 threadLocalRandomProbe 是否为 0 来判断是否当前线程实例是否为第一次调用随机数生成方法，从而决定是否要给当前线程初始化一个随机的 threadLocalRandomSeed 种子值。因此，如果其他线程绕过 current 方法直接调用随机数方法，那么它的种子值就是 0, 1 </em> gamma, 2 * gamma… 因此也就是可预测的了。</p>
+</li>
+<li><p>ConcurrentHashMap 还提供了 putIfAbsent 方法，你能否通过查阅JDK 文档，说说 computeIfAbsent 和 putIfAbsent 方法的区别？</p>
+<p>computeIfAbsent和putIfAbsent区别是三点：</p>
+<ol>
+<li>当Key存在的时候，如果Value获取比较昂贵的话，putIfAbsent就白白浪费时间在获取这个昂贵的Value上（这个点特别注意）</li>
+<li>Key不存在的时候，putIfAbsent返回null，小心空指针，而computeIfAbsent返回计算后的值</li>
+<li>当Key不存在的时候，putIfAbsent允许put null进去，而computeIfAbsent不能，之后进行containsKey查询是有区别的（当然了，此条针对HashMap，ConcurrentHashMap不允许put null value进去）</li>
+</ol>
+</li>
+</ul>
+]]></content>
       <categories>
-          
-          <category> common—error </category>
-          
+        <category>common—error</category>
       </categories>
-      
-      
-        <tags>
-            
-            <tag> Java </tag>
-            
-            <tag> concurrent </tag>
-            
-        </tags>
-      
-    </entry>
-    
-    
-    
-    <entry>
-      <title>kafka安装手册</title>
-      <link href="/2020/03/12/kafka-an-zhuang-shou-ce/"/>
-      <url>/2020/03/12/kafka-an-zhuang-shou-ce/</url>
-      
-        <content type="html"><![CDATA[<h2 id="环境"><a href="#环境" class="headerlink" title="环境"></a>环境</h2><ul><li>kafka 2.11-0.9.0.1</li><li>zookeeper 3.4.14</li><li>jdk openjdk version “1.8.0_242”</li></ul><h2 id="安装步骤"><a href="#安装步骤" class="headerlink" title="安装步骤"></a>安装步骤</h2><p>一. Zookeeper</p><pre><code class="sh">tar -xvzf zookeeper-3.4.14.tar.gzmv zookeeper-3.4.14 /opt/cd /opt/zookeeper-3.4.14/conf/## 复制模板配置文件cp zoo_sample.cfg zoo.cfg##### 可选，修改zoo.cfg 中的data地址dataDir=/opt/zookeeper-3.4.14/data########启动cd ../bin/./zkServer.sh  start## 修改环境变量，把zookeeper 地址添加进去sudo vim /etc/profile######ZOOKEEPER_HOME=/opt/zookeeper-3.4.14PATH=$PATH:$ZOOKEEPER_HOME/bin######source /etc/profile</code></pre><p>二. Kafka</p><pre><code class="sh">tar xvzf kafka_2.11-0.9.0.1.tgzmv kafka_2.11-0.9.0.1 /opt/cd /opt/kafka_2.11-0.9.0.1/## 运行前需要确认Zookeeper是否启动 并且修改config/server.properties 中的Zookeeper地址cd bin/nohup kafka-server-start.sh ../config/server.properties &amp;### 没报错为正常启动 ，否则查看 nohup文件查看错误，一般情况为内存太大vim  kafka-server-start.shif [ &quot;x$KAFKA_HEAP_OPTS&quot; = &quot;x&quot; ]; then    export KAFKA_HEAP_OPTS=&quot;-Xmx256m -Xms128m&quot;fi######## 修改环境变量，把zookeeper 地址添加进去sudo vim /etc/profile######KAFKA_HOME=/opt/kafka_2.11-0.9.0.1PATH=$PATH:$KAFKA_HOME/bin######source /etc/profile</code></pre><h2 id="测试"><a href="#测试" class="headerlink" title="测试"></a>测试</h2><ul><li>打开两个窗口</li><li>窗口一为producer </li><li>执行<code>opt/kafka_2.11-0.9.0.1$ bin/kafka-console-producer.sh --broker-list localhost:9092 --topic test</code></li><li>窗口二为consumer </li><li>执行<code>opt/kafka_2.11-0.9.0.1$ bin/kafka-console-consumer.sh --zookeeper localhost:2181 --topic test --from-beginning</code></li><li>在producer任意输入内容，查看consumer是否能正常接收，如果可以则安装完成</li></ul>]]></content>
-      
-      
-      
-        <tags>
-            
-            <tag> kafka </tag>
-            
-        </tags>
-      
-    </entry>
-    
-    
-    
-    <entry>
-      <title>二叉树的前序，中序，后续遍历</title>
-      <link href="/2019/05/31/er-cha-shu-de-qian-xu-zhong-xu-hou-xu-bian-li/"/>
-      <url>/2019/05/31/er-cha-shu-de-qian-xu-zhong-xu-hou-xu-bian-li/</url>
-      
-        <content type="html"><![CDATA[<h2 id="递归"><a href="#递归" class="headerlink" title="递归"></a>递归</h2><ul><li>递归的做法比较简单，直接递归调用方法就行，三种方式仅仅是入队列的位置不同而已，这儿就直接贴代码了</li></ul><pre><code class="java">public List&lt;Integer&gt; inorderTraversal (TreeNode root) {         List&lt;Integer&gt; list = new ArrayList&lt;&gt;();         if (root == null) {             return list;         }         //前序遍历         //list.add(root.val);         if (root.left != null) {             List&lt;Integer&gt; list1 = inorderTraversal(root.left);             list.addAll(list1);         }         //中序遍历         list.add(root.val);         if (root.right != null) {             List&lt;Integer&gt; list1 = inorderTraversal(root.right);             list.addAll(list1);         }         //后序遍历         //list.add(root.val);         return list;     }</code></pre><h2 id="非递归"><a href="#非递归" class="headerlink" title="非递归"></a>非递归</h2><ul><li>非递归的做法通常使用栈的方式处理，后续会比较麻烦一点，我们一个个来。<ol><li>前序遍历</li></ol></li></ul><pre><code class="java">public List&lt;Integer&gt; preorderTraversal_2 (TreeNode root) {         //前序遍历的顺序是《根左右》         List&lt;Integer&gt; list = new ArrayList&lt;&gt;();         TreeNode temp = root;         Stack&lt;TreeNode&gt; stack = new Stack&lt;&gt;();         while (temp != null || !stack.isEmpty()) {             //节点非空就入栈             while (temp != null) {                 //根节点先直接输出                 list.add(temp.val);                 stack.push(temp);                 //一路往左子树深入                 temp = temp.left;             }             //开始弹出堆栈，处理右子树             if (!stack.isEmpty()) {                 temp = stack.pop();                 temp = temp.right;             }         }         return list;     }</code></pre><ol start="2"><li>中序遍历</li></ol><pre><code class="java">     public List&lt;Integer&gt; inorderTraversal_2 (TreeNode root) {          //前序遍历的顺序是《左根右》         List&lt;Integer&gt; list = new ArrayList&lt;&gt;();         TreeNode temp = root;         Stack&lt;TreeNode&gt; stack = new Stack&lt;&gt;();         while (temp != null || !stack.isEmpty()) {             while (temp != null) {                 //一路往左子树深入                 stack.push(temp);                 temp = temp.left;             }             if (!stack.isEmpty()) {                 //弹出最后一个左子树的节点                 temp = stack.pop();                 //输出当前值                 list.add(temp.val);                 //往当前节点的右子树深入                 temp = temp.right;             }         }         return list;     }</code></pre><ol start="3"><li><p>后序遍历</p><ul><li>堆栈做法，因为是《左右根》的顺序，所以堆栈出栈的时候会调用两次，第一次完成左子树的遍历，到节点，此时该节点临时保存下，不输出，重新入栈，然后继续往该节点的右子树进行遍历，直到下一次临时节点等于栈顶，代表该节点的右子树也遍历完毕，此时再将节点的值进行输出</li></ul></li></ol><pre><code class="java">/**      * 描述 后序遍历 非递归      * 左边到最底层-》第一次出栈-》右边到最底层-》第二次出栈-》记录      * @param root      * @return java.util.List&lt;java.lang.Integer&gt;      * @author Ted Wang      * @created 2019/5/27 15:02      **/     public List&lt;Integer&gt; postorderTraversal (TreeNode root) {         List&lt;Integer&gt; list = new ArrayList&lt;&gt;();         Stack&lt;TreeNode&gt; stack = new Stack&lt;&gt;();         TreeNode temp = root;         TreeNode last = null;         //走到左子树最底层         while (temp != null) {             stack.push(temp);             temp = temp.left;         }         while (!stack.isEmpty()) {             temp = stack.pop();             if (temp.right != null &amp;&amp; !temp.right.equals(last)) {                 stack.push(temp);                 temp = temp.right;                 while (temp != null) {                     //走到右子树的最左边                     stack.push(temp);                     temp = temp.left;                 }             } else {                 //没有右子树或者右子树已经遍历完成，输出该节点                 list.add(temp.val);                 last = temp;             }         }         return list;     }</code></pre><ul><li>逆序做法，因为<strong>前序遍历</strong> 是 《根 左 右》，而 <strong>后序遍历</strong>是 《左 右 根》，所以只需要把<strong>前序遍历</strong>的遍历顺序改为《根 右 左》此时就正好是<strong>后续遍历</strong>的逆序遍历，把输出结果逆序输出就行</li></ul><pre><code class="java">     /**      * 描述 后序遍历 非递归      * 前序 :根左右 改成 根右左 =》逆序 左右根（后序遍历）      * @param root      * @return java.util.List&lt;java.lang.Integer&gt;      * @author Ted Wang      * @created 2019/5/27 15:02      **/     public List&lt;Integer&gt; postorderTraversal2 (TreeNode root) {         List&lt;Integer&gt; list = new ArrayList&lt;&gt;();         TreeNode temp = root;         Stack&lt;TreeNode&gt; stack = new Stack&lt;&gt;();         while (temp != null || !stack.isEmpty()) {             while (temp != null) {                 list.add(temp.val);                 stack.push(temp);                 temp = temp.right;             }             if (!stack.isEmpty()) {                 temp = stack.pop();                 temp = temp.left;             }         }         Collections.reverse(list);         return list;     }  /**      * 描述 后序遍历 非递归       * 前序 :根左右 改成 根右左 =》逆序 左右根（后序遍历）      * 思路和上面的方法一致，只是list在保存的时候直接逆序保存      * @param root      * @return java.util.List&lt;java.lang.Integer&gt;      * @author Ted Wang      * @created 2019/5/27 15:02   **/public List&lt;Integer&gt; postorderTraversal3 (TreeNode root) {         List&lt;Integer&gt; list = new ArrayList&lt;&gt;();         TreeNode temp = root;         Stack&lt;TreeNode&gt; stack = new Stack&lt;&gt;();         stack.push(root);         while (!stack.isEmpty()) {             temp = root;             list.add(0, temp.val);              if (temp.left!=null){                  stack.push(temp.left);              }              if (temp.right!=null){                  stack.push(temp.right);              }         }         return list;    }</code></pre><p>​    </p>]]></content>
-      
-      
+      <tags>
+        <tag>Java</tag>
+        <tag>concurrent</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>kafka安装手册</title>
+    <url>/2020/03/12/kafka-an-zhuang-shou-ce/</url>
+    <content><![CDATA[<h2 id="环境"><a href="#环境" class="headerlink" title="环境"></a>环境</h2><ul>
+<li>kafka 2.11-0.9.0.1</li>
+<li>zookeeper 3.4.14</li>
+<li>jdk openjdk version “1.8.0_242”</li>
+</ul>
+<h2 id="安装步骤"><a href="#安装步骤" class="headerlink" title="安装步骤"></a>安装步骤</h2><p>一. Zookeeper</p>
+<pre><code class="sh">tar -xvzf zookeeper-3.4.14.tar.gz
+mv zookeeper-3.4.14 /opt/
+cd /opt/zookeeper-3.4.14/conf/
+## 复制模板配置文件
+cp zoo_sample.cfg zoo.cfg
+##### 可选，修改zoo.cfg 中的data地址
+dataDir=/opt/zookeeper-3.4.14/data
+######
+
+##启动
+cd ../bin/
+./zkServer.sh  start
+## 修改环境变量，把zookeeper 地址添加进去
+sudo vim /etc/profile
+######
+ZOOKEEPER_HOME=/opt/zookeeper-3.4.14
+PATH=$PATH:$ZOOKEEPER_HOME/bin
+######
+source /etc/profile
+</code></pre>
+<p>二. Kafka</p>
+<pre><code class="sh">tar xvzf kafka_2.11-0.9.0.1.tgz
+mv kafka_2.11-0.9.0.1 /opt/
+cd /opt/kafka_2.11-0.9.0.1/
+## 运行前需要确认Zookeeper是否启动 并且修改config/server.properties 中的Zookeeper地址
+cd bin/
+nohup kafka-server-start.sh ../config/server.properties &amp;
+### 没报错为正常启动 ，否则查看 nohup文件查看错误，一般情况为内存太大
+vim  kafka-server-start.sh
+if [ &quot;x$KAFKA_HEAP_OPTS&quot; = &quot;x&quot; ]; then
+    export KAFKA_HEAP_OPTS=&quot;-Xmx256m -Xms128m&quot;
+fi
+######
+
+## 修改环境变量，把zookeeper 地址添加进去
+sudo vim /etc/profile
+######
+KAFKA_HOME=/opt/kafka_2.11-0.9.0.1
+PATH=$PATH:$KAFKA_HOME/bin
+######
+source /etc/profile
+</code></pre>
+<h2 id="测试"><a href="#测试" class="headerlink" title="测试"></a>测试</h2><ul>
+<li>打开两个窗口</li>
+<li>窗口一为producer </li>
+<li>执行<code>opt/kafka_2.11-0.9.0.1$ bin/kafka-console-producer.sh --broker-list localhost:9092 --topic test</code></li>
+<li>窗口二为consumer </li>
+<li>执行<code>opt/kafka_2.11-0.9.0.1$ bin/kafka-console-consumer.sh --zookeeper localhost:2181 --topic test --from-beginning</code></li>
+<li>在producer任意输入内容，查看consumer是否能正常接收，如果可以则安装完成</li>
+</ul>
+]]></content>
+      <tags>
+        <tag>kafka</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>二叉树的前序，中序，后续遍历</title>
+    <url>/2019/05/31/er-cha-shu-de-qian-xu-zhong-xu-hou-xu-bian-li/</url>
+    <content><![CDATA[<h2 id="递归"><a href="#递归" class="headerlink" title="递归"></a>递归</h2><ul>
+<li>递归的做法比较简单，直接递归调用方法就行，三种方式仅仅是入队列的位置不同而已，这儿就直接贴代码了</li>
+</ul>
+<pre><code class="java">public List&lt;Integer&gt; inorderTraversal (TreeNode root) {
+
+         List&lt;Integer&gt; list = new ArrayList&lt;&gt;();
+         if (root == null) {
+             return list;
+         }
+         //前序遍历
+         //list.add(root.val);
+
+         if (root.left != null) {
+             List&lt;Integer&gt; list1 = inorderTraversal(root.left);
+             list.addAll(list1);
+         }
+         //中序遍历
+         list.add(root.val);
+
+         if (root.right != null) {
+             List&lt;Integer&gt; list1 = inorderTraversal(root.right);
+             list.addAll(list1);
+         }
+         //后序遍历
+         //list.add(root.val);
+
+         return list;
+     }
+</code></pre>
+<h2 id="非递归"><a href="#非递归" class="headerlink" title="非递归"></a>非递归</h2><ul>
+<li>非递归的做法通常使用栈的方式处理，后续会比较麻烦一点，我们一个个来。<ol>
+<li>前序遍历</li>
+</ol>
+</li>
+</ul>
+<pre><code class="java">public List&lt;Integer&gt; preorderTraversal_2 (TreeNode root) {
+
+         //前序遍历的顺序是《根左右》
+         List&lt;Integer&gt; list = new ArrayList&lt;&gt;();
+         TreeNode temp = root;
+         Stack&lt;TreeNode&gt; stack = new Stack&lt;&gt;();
+         while (temp != null || !stack.isEmpty()) {
+             //节点非空就入栈
+             while (temp != null) {
+                 //根节点先直接输出
+                 list.add(temp.val);
+                 stack.push(temp);
+                 //一路往左子树深入
+                 temp = temp.left;
+             }
+             //开始弹出堆栈，处理右子树
+             if (!stack.isEmpty()) {
+                 temp = stack.pop();
+                 temp = temp.right;
+             }
+         }
+
+         return list;
+     }
+</code></pre>
+<ol start="2">
+<li>中序遍历</li>
+</ol>
+<pre><code class="java">     public List&lt;Integer&gt; inorderTraversal_2 (TreeNode root) {
+          //前序遍历的顺序是《左根右》
+         List&lt;Integer&gt; list = new ArrayList&lt;&gt;();
+         TreeNode temp = root;
+         Stack&lt;TreeNode&gt; stack = new Stack&lt;&gt;();
+         while (temp != null || !stack.isEmpty()) {
+             while (temp != null) {
+                 //一路往左子树深入
+                 stack.push(temp);
+                 temp = temp.left;
+             }
+             if (!stack.isEmpty()) {
+                 //弹出最后一个左子树的节点
+                 temp = stack.pop();
+                 //输出当前值
+                 list.add(temp.val);
+                 //往当前节点的右子树深入
+                 temp = temp.right;
+             }
+         }
+
+         return list;
+     }
+</code></pre>
+<ol start="3">
+<li><p>后序遍历</p>
+<ul>
+<li>堆栈做法，因为是《左右根》的顺序，所以堆栈出栈的时候会调用两次，第一次完成左子树的遍历，到节点，此时该节点临时保存下，不输出，重新入栈，然后继续往该节点的右子树进行遍历，直到下一次临时节点等于栈顶，代表该节点的右子树也遍历完毕，此时再将节点的值进行输出</li>
+</ul>
+</li>
+</ol>
+<pre><code class="java">/**
+      * 描述 后序遍历 非递归
+      * 左边到最底层-》第一次出栈-》右边到最底层-》第二次出栈-》记录
+      * @param root
+      * @return java.util.List&lt;java.lang.Integer&gt;
+      * @author Ted Wang
+      * @created 2019/5/27 15:02
+      **/
+     public List&lt;Integer&gt; postorderTraversal (TreeNode root) {
+         List&lt;Integer&gt; list = new ArrayList&lt;&gt;();
+         Stack&lt;TreeNode&gt; stack = new Stack&lt;&gt;();
+         TreeNode temp = root;
+         TreeNode last = null;
+         //走到左子树最底层
+         while (temp != null) {
+             stack.push(temp);
+             temp = temp.left;
+         }
+
+         while (!stack.isEmpty()) {
+             temp = stack.pop();
+             if (temp.right != null &amp;&amp; !temp.right.equals(last)) {
+                 stack.push(temp);
+                 temp = temp.right;
+                 while (temp != null) {
+                     //走到右子树的最左边
+                     stack.push(temp);
+                     temp = temp.left;
+                 }
+             } else {
+                 //没有右子树或者右子树已经遍历完成，输出该节点
+                 list.add(temp.val);
+                 last = temp;
+             }
+         }
+         return list;
+     }
+</code></pre>
+<ul>
+<li>逆序做法，因为<strong>前序遍历</strong> 是 《根 左 右》，而 <strong>后序遍历</strong>是 《左 右 根》，所以只需要把<strong>前序遍历</strong>的遍历顺序改为《根 右 左》此时就正好是<strong>后续遍历</strong>的逆序遍历，把输出结果逆序输出就行</li>
+</ul>
+<pre><code class="java">     /**
+      * 描述 后序遍历 非递归
+      * 前序 :根左右 改成 根右左 =》逆序 左右根（后序遍历）
+      * @param root
+      * @return java.util.List&lt;java.lang.Integer&gt;
+      * @author Ted Wang
+      * @created 2019/5/27 15:02
+      **/
+     public List&lt;Integer&gt; postorderTraversal2 (TreeNode root) {
+         List&lt;Integer&gt; list = new ArrayList&lt;&gt;();
+         TreeNode temp = root;
+         Stack&lt;TreeNode&gt; stack = new Stack&lt;&gt;();
+         while (temp != null || !stack.isEmpty()) {
+             while (temp != null) {
+                 list.add(temp.val);
+                 stack.push(temp);
+                 temp = temp.right;
+             }
+             if (!stack.isEmpty()) {
+                 temp = stack.pop();
+                 temp = temp.left;
+             }
+         }
+         Collections.reverse(list);
+
+         return list;
+     }
+
+  /**
+      * 描述 后序遍历 非递归 
+      * 前序 :根左右 改成 根右左 =》逆序 左右根（后序遍历）
+      * 思路和上面的方法一致，只是list在保存的时候直接逆序保存
+      * @param root
+      * @return java.util.List&lt;java.lang.Integer&gt;
+      * @author Ted Wang
+      * @created 2019/5/27 15:02
+   **/
+public List&lt;Integer&gt; postorderTraversal3 (TreeNode root) {
+         List&lt;Integer&gt; list = new ArrayList&lt;&gt;();
+         TreeNode temp = root;
+         Stack&lt;TreeNode&gt; stack = new Stack&lt;&gt;();
+         stack.push(root);
+         while (!stack.isEmpty()) {
+             temp = root;
+             list.add(0, temp.val);
+              if (temp.left!=null){
+                  stack.push(temp.left);
+              }
+              if (temp.right!=null){
+                  stack.push(temp.right);
+              }
+         }
+
+
+         return list;
+    }
+</code></pre>
+<p>​    </p>
+]]></content>
       <categories>
-          
-          <category> algorithm </category>
-          
+        <category>algorithm</category>
       </categories>
-      
-      
-        <tags>
-            
-            <tag> Java </tag>
-            
-        </tags>
-      
-    </entry>
-    
-    
-  
-  
+      <tags>
+        <tag>Java</tag>
+      </tags>
+  </entry>
 </search>
