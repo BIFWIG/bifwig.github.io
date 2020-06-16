@@ -40,7 +40,7 @@
 
     <script src="/libs/jquery/jquery.min.js"></script>
     
-<link rel="stylesheet" href="/css/prism-tomorrow.css" type="text/css"></head>
+</head>
 
 
 <body>
@@ -357,7 +357,7 @@
                 
                 <div class="info-break-policy">
                     <i class="far fa-file-word fa-fw"></i>文章字数:&nbsp;&nbsp;
-                    338
+                    345
                 </div>
                 
 
@@ -376,7 +376,7 @@
 <li>jdk openjdk version “1.8.0_242”</li>
 </ul>
 <h2 id="安装步骤"><a href="#安装步骤" class="headerlink" title="安装步骤"></a>安装步骤</h2><p>一. Zookeeper</p>
-<pre class=" language-sh"><code class="language-sh">tar -xvzf zookeeper-3.4.14.tar.gz
+<pre><code class="sh">tar -xvzf zookeeper-3.4.14.tar.gz
 mv zookeeper-3.4.14 /opt/
 cd /opt/zookeeper-3.4.14/conf/
 ## 复制模板配置文件
@@ -397,16 +397,16 @@ PATH=$PATH:$ZOOKEEPER_HOME/bin
 source /etc/profile
 </code></pre>
 <p>二. Kafka</p>
-<pre class=" language-sh"><code class="language-sh">tar xvzf kafka_2.11-0.9.0.1.tgz
+<pre><code class="sh">tar xvzf kafka_2.11-0.9.0.1.tgz
 mv kafka_2.11-0.9.0.1 /opt/
 cd /opt/kafka_2.11-0.9.0.1/
 ## 运行前需要确认Zookeeper是否启动 并且修改config/server.properties 中的Zookeeper地址
 cd bin/
-nohup kafka-server-start.sh ../config/server.properties &
+nohup kafka-server-start.sh ../config/server.properties &amp;
 ### 没报错为正常启动 ，否则查看 nohup文件查看错误，一般情况为内存太大
 vim  kafka-server-start.sh
-if [ "x$KAFKA_HEAP_OPTS" = "x" ]; then
-    export KAFKA_HEAP_OPTS="-Xmx256m -Xms128m"
+if [ &quot;x$KAFKA_HEAP_OPTS&quot; = &quot;x&quot; ]; then
+    export KAFKA_HEAP_OPTS=&quot;-Xmx256m -Xms128m&quot;
 fi
 ######
 
@@ -604,9 +604,9 @@ ThrealLocal 会重复利用线程池的线程，将springBoot中的配置文件�
                             递归
 递归的做法比较简单，直接递归调用方法就行，三种方式仅仅是入队列的位置不同而已，这儿就直接贴代码了
 
-public List&lt;Integer> inorderTraversal (TreeNode root) {
+public List&lt;Integer&gt; inorderTraversal (TreeNode root) {
 
-       
+    
                         
                     </div>
                     <div class="publish-info">

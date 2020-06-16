@@ -40,7 +40,7 @@
 
     <script src="/libs/jquery/jquery.min.js"></script>
     
-<link rel="stylesheet" href="/css/prism-tomorrow.css" type="text/css"></head>
+</head>
 
 
 <body>
@@ -262,7 +262,7 @@
                 
                 <div class="info-break-policy">
                     <i class="far fa-file-word fa-fw"></i>文章字数:&nbsp;&nbsp;
-                    628
+                    646
                 </div>
                 
 
@@ -279,93 +279,93 @@
 <h2 id="分析"><a href="#分析" class="headerlink" title="分析"></a>分析</h2><ol>
 <li>我们一般情况使用jdbc加载驱动都是直接<code>Class.forName(driverClass)</code> 这种方式导入，这时候实际上会将驱动注册到我们<code>DriverManager</code>的类上面,然后我们在通过<code>getConnection</code>获取连接对象</li>
 <li><p>通过分析源码可知，在我们获取连接的时候，会进行验证驱动是否允许,如果允许才会进行驱动调用。</p>
-<pre class=" language-java"><code class="language-java"><span class="token comment" spellcheck="true">//  Worker method called by the public getConnection() methods.</span>
- <span class="token keyword">private</span> <span class="token keyword">static</span> Connection <span class="token function">getConnection</span><span class="token punctuation">(</span>
-         <span class="token comment" spellcheck="true">//......</span>
-     String url<span class="token punctuation">,</span> java<span class="token punctuation">.</span>util<span class="token punctuation">.</span>Properties info<span class="token punctuation">,</span> Class<span class="token operator">&lt;</span><span class="token operator">?</span><span class="token operator">></span> caller<span class="token punctuation">)</span> <span class="token keyword">throws</span> SQLException <span class="token punctuation">{</span>
-     <span class="token keyword">for</span><span class="token punctuation">(</span>DriverInfo aDriver <span class="token operator">:</span> registeredDrivers<span class="token punctuation">)</span> <span class="token punctuation">{</span>
-         <span class="token comment" spellcheck="true">// If the caller does not have permission to load the driver then</span>
-         <span class="token comment" spellcheck="true">// skip it.</span>
-         <span class="token keyword">if</span><span class="token punctuation">(</span><span class="token function">isDriverAllowed</span><span class="token punctuation">(</span>aDriver<span class="token punctuation">.</span>driver<span class="token punctuation">,</span> callerCL<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
-             <span class="token keyword">try</span> <span class="token punctuation">{</span>
-                 <span class="token function">println</span><span class="token punctuation">(</span><span class="token string">"    trying "</span> <span class="token operator">+</span> aDriver<span class="token punctuation">.</span>driver<span class="token punctuation">.</span><span class="token function">getClass</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">getName</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-                 Connection con <span class="token operator">=</span> aDriver<span class="token punctuation">.</span>driver<span class="token punctuation">.</span><span class="token function">connect</span><span class="token punctuation">(</span>url<span class="token punctuation">,</span> info<span class="token punctuation">)</span><span class="token punctuation">;</span>
-                 <span class="token keyword">if</span> <span class="token punctuation">(</span>con <span class="token operator">!=</span> null<span class="token punctuation">)</span> <span class="token punctuation">{</span>
-                     <span class="token comment" spellcheck="true">// Success!</span>
-                     <span class="token function">println</span><span class="token punctuation">(</span><span class="token string">"getConnection returning "</span> <span class="token operator">+</span> aDriver<span class="token punctuation">.</span>driver<span class="token punctuation">.</span><span class="token function">getClass</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">getName</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-                     <span class="token keyword">return</span> <span class="token punctuation">(</span>con<span class="token punctuation">)</span><span class="token punctuation">;</span>
-                 <span class="token punctuation">}</span>
-             <span class="token punctuation">}</span> <span class="token keyword">catch</span> <span class="token punctuation">(</span><span class="token class-name">SQLException</span> ex<span class="token punctuation">)</span> <span class="token punctuation">{</span>
-                 <span class="token keyword">if</span> <span class="token punctuation">(</span>reason <span class="token operator">==</span> null<span class="token punctuation">)</span> <span class="token punctuation">{</span>
-                     reason <span class="token operator">=</span> ex<span class="token punctuation">;</span>
-                 <span class="token punctuation">}</span>
-             <span class="token punctuation">}</span>
+<pre><code class="java">//  Worker method called by the public getConnection() methods.
+ private static Connection getConnection(
+         //......
+     String url, java.util.Properties info, Class&lt;?&gt; caller) throws SQLException {
+     for(DriverInfo aDriver : registeredDrivers) {
+         // If the caller does not have permission to load the driver then
+         // skip it.
+         if(isDriverAllowed(aDriver.driver, callerCL)) {
+             try {
+                 println(&quot;    trying &quot; + aDriver.driver.getClass().getName());
+                 Connection con = aDriver.driver.connect(url, info);
+                 if (con != null) {
+                     // Success!
+                     println(&quot;getConnection returning &quot; + aDriver.driver.getClass().getName());
+                     return (con);
+                 }
+             } catch (SQLException ex) {
+                 if (reason == null) {
+                     reason = ex;
+                 }
+             }
 
-         <span class="token punctuation">}</span> <span class="token keyword">else</span> <span class="token punctuation">{</span>
-             <span class="token function">println</span><span class="token punctuation">(</span><span class="token string">"    skipping: "</span> <span class="token operator">+</span> aDriver<span class="token punctuation">.</span><span class="token function">getClass</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">getName</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-         <span class="token punctuation">}</span>
+         } else {
+             println(&quot;    skipping: &quot; + aDriver.getClass().getName());
+         }
 
-     <span class="token punctuation">}</span>
-             <span class="token comment" spellcheck="true">//......</span>
+     }
+             //......
 
- <span class="token punctuation">}</span>
+ }
 
-          <span class="token keyword">private</span> <span class="token keyword">static</span> <span class="token keyword">boolean</span> <span class="token function">isDriverAllowed</span><span class="token punctuation">(</span>Driver driver<span class="token punctuation">,</span> ClassLoader classLoader<span class="token punctuation">)</span> <span class="token punctuation">{</span>        
-     <span class="token keyword">boolean</span> result <span class="token operator">=</span> <span class="token boolean">false</span><span class="token punctuation">;</span>       
-      <span class="token keyword">if</span><span class="token punctuation">(</span>driver <span class="token operator">!=</span> null<span class="token punctuation">)</span> <span class="token punctuation">{</span>
-        Class<span class="token operator">&lt;</span><span class="token operator">?</span><span class="token operator">></span> aClass <span class="token operator">=</span> null<span class="token punctuation">;</span>           
-       <span class="token keyword">try</span> <span class="token punctuation">{</span>
-             aClass <span class="token operator">=</span>  Class<span class="token punctuation">.</span><span class="token function">forName</span><span class="token punctuation">(</span>driver<span class="token punctuation">.</span><span class="token function">getClass</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">getName</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token boolean">true</span><span class="token punctuation">,</span> classLoader<span class="token punctuation">)</span><span class="token punctuation">;</span>
-         <span class="token punctuation">}</span> <span class="token keyword">catch</span> <span class="token punctuation">(</span><span class="token class-name">Exception</span> ex<span class="token punctuation">)</span> <span class="token punctuation">{</span>
-             result <span class="token operator">=</span> <span class="token boolean">false</span><span class="token punctuation">;</span>
-         <span class="token punctuation">}</span>
-          result <span class="token operator">=</span> <span class="token punctuation">(</span> aClass <span class="token operator">==</span> driver<span class="token punctuation">.</span><span class="token function">getClass</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">)</span> <span class="token operator">?</span> <span class="token boolean">true</span> <span class="token operator">:</span> <span class="token boolean">false</span><span class="token punctuation">;</span>
-     <span class="token punctuation">}</span>    
+          private static boolean isDriverAllowed(Driver driver, ClassLoader classLoader) {        
+     boolean result = false;       
+      if(driver != null) {
+        Class&lt;?&gt; aClass = null;           
+       try {
+             aClass =  Class.forName(driver.getClass().getName(), true, classLoader);
+         } catch (Exception ex) {
+             result = false;
+         }
+          result = ( aClass == driver.getClass() ) ? true : false;
+     }    
 
-    <span class="token keyword">return</span> result<span class="token punctuation">;</span>
- <span class="token punctuation">}</span>
+    return result;
+ }
 </code></pre>
 </li>
 <li>但是由于<strong>双亲委派</strong>机制的存在，我们调用同类同名的class的时候会首先去调用顶级的classLoader，此时我们就会获取到 <strong>8.0</strong>版本的Driver ，这个并不是我们想要的结果，所以我们必须自定义一个classLoader 来破坏双亲委派机制，从而实现加载我们任意版本的class。<h2 id="实现"><a href="#实现" class="headerlink" title="实现"></a>实现</h2></li>
 <li><p>简单实现一个破坏了双亲委派的classLoader</p>
-<pre class=" language-java"><code class="language-java"><span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">MyClassloader</span> <span class="token keyword">extends</span> <span class="token class-name">URLClassLoader</span> <span class="token punctuation">{</span>
- <span class="token keyword">public</span> <span class="token function">MyClassloader</span><span class="token punctuation">(</span>URL<span class="token punctuation">[</span><span class="token punctuation">]</span> urls<span class="token punctuation">)</span> <span class="token punctuation">{</span>
-     <span class="token keyword">super</span><span class="token punctuation">(</span>urls<span class="token punctuation">)</span><span class="token punctuation">;</span>
- <span class="token punctuation">}</span>
+<pre><code class="java">public class MyClassloader extends URLClassLoader {
+ public MyClassloader(URL[] urls) {
+     super(urls);
+ }
 
- Map<span class="token operator">&lt;</span>String<span class="token punctuation">,</span> Class<span class="token operator">&lt;</span><span class="token operator">?</span><span class="token operator">>></span> classMap <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">HashMap</span><span class="token operator">&lt;</span><span class="token operator">></span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+ Map&lt;String, Class&lt;?&gt;&gt; classMap = new HashMap&lt;&gt;();
 
- <span class="token annotation punctuation">@Override</span>
- <span class="token keyword">public</span> Class<span class="token operator">&lt;</span><span class="token operator">?</span><span class="token operator">></span> <span class="token function">loadClass</span><span class="token punctuation">(</span>String name<span class="token punctuation">)</span> <span class="token keyword">throws</span> ClassNotFoundException <span class="token punctuation">{</span>
-     Class<span class="token operator">&lt;</span><span class="token operator">?</span><span class="token operator">></span> classLoaded <span class="token operator">=</span> classMap<span class="token punctuation">.</span><span class="token function">get</span><span class="token punctuation">(</span>name<span class="token punctuation">)</span><span class="token punctuation">;</span>
-     <span class="token keyword">if</span> <span class="token punctuation">(</span>classLoaded <span class="token operator">!=</span> null<span class="token punctuation">)</span> <span class="token punctuation">{</span>
-         <span class="token keyword">return</span> classLoaded<span class="token punctuation">;</span>
-     <span class="token punctuation">}</span>
-     Class<span class="token operator">&lt;</span><span class="token operator">?</span><span class="token operator">></span> findClass <span class="token operator">=</span> null<span class="token punctuation">;</span>
-     <span class="token keyword">try</span> <span class="token punctuation">{</span>
-         findClass <span class="token operator">=</span> <span class="token function">findClass</span><span class="token punctuation">(</span>name<span class="token punctuation">)</span><span class="token punctuation">;</span>
-     <span class="token punctuation">}</span> <span class="token keyword">catch</span> <span class="token punctuation">(</span><span class="token class-name">Exception</span> e<span class="token punctuation">)</span> <span class="token punctuation">{</span>
-         <span class="token comment" spellcheck="true">//还可以从父类查找，这个异常吞掉，如果没有父类会抛出</span>
-     <span class="token punctuation">}</span>
-     <span class="token keyword">if</span> <span class="token punctuation">(</span>findClass <span class="token operator">!=</span> null<span class="token punctuation">)</span> <span class="token punctuation">{</span>
-         classMap<span class="token punctuation">.</span><span class="token function">put</span><span class="token punctuation">(</span>name<span class="token punctuation">,</span> findClass<span class="token punctuation">)</span><span class="token punctuation">;</span>
-         <span class="token keyword">return</span> findClass<span class="token punctuation">;</span>
-     <span class="token punctuation">}</span>
-     <span class="token keyword">return</span> <span class="token keyword">super</span><span class="token punctuation">.</span><span class="token function">loadClass</span><span class="token punctuation">(</span>name<span class="token punctuation">)</span><span class="token punctuation">;</span>
- <span class="token punctuation">}</span>
+ @Override
+ public Class&lt;?&gt; loadClass(String name) throws ClassNotFoundException {
+     Class&lt;?&gt; classLoaded = classMap.get(name);
+     if (classLoaded != null) {
+         return classLoaded;
+     }
+     Class&lt;?&gt; findClass = null;
+     try {
+         findClass = findClass(name);
+     } catch (Exception e) {
+         //还可以从父类查找，这个异常吞掉，如果没有父类会抛出
+     }
+     if (findClass != null) {
+         classMap.put(name, findClass);
+         return findClass;
+     }
+     return super.loadClass(name);
+ }
 
- <span class="token annotation punctuation">@Override</span>
- <span class="token keyword">protected</span> Package <span class="token function">getPackage</span><span class="token punctuation">(</span>String name<span class="token punctuation">)</span> <span class="token punctuation">{</span>
-     <span class="token keyword">return</span> null<span class="token punctuation">;</span>
- <span class="token punctuation">}</span>
-<span class="token punctuation">}</span>
+ @Override
+ protected Package getPackage(String name) {
+     return null;
+ }
+}
 </code></pre>
 </li>
-<li>就能够使用这个我们自己写的classLoader加载jar包中的class了<pre class=" language-java"><code class="language-java">             String driverClass <span class="token operator">=</span> <span class="token string">"com.mysql.jdbc.Driver"</span><span class="token punctuation">;</span>
-     File file <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">File</span><span class="token punctuation">(</span><span class="token string">"mysql/mysql-connector-java-5.1.47.jar"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-     MyClassloader loader <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">MyClassloader</span><span class="token punctuation">(</span><span class="token keyword">new</span> <span class="token class-name">URL</span><span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token punctuation">{</span>file<span class="token punctuation">.</span><span class="token function">toURL</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">}</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-     Driver driver <span class="token operator">=</span> <span class="token punctuation">(</span>Driver<span class="token punctuation">)</span> loader<span class="token punctuation">.</span><span class="token function">loadClass</span><span class="token punctuation">(</span>driverClass<span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">newInstance</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-     Connection connect <span class="token operator">=</span> driver<span class="token punctuation">.</span><span class="token function">connect</span><span class="token punctuation">(</span>url<span class="token punctuation">,</span> properties<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<li>就能够使用这个我们自己写的classLoader加载jar包中的class了<pre><code class="java">             String driverClass = &quot;com.mysql.jdbc.Driver&quot;;
+     File file = new File(&quot;mysql/mysql-connector-java-5.1.47.jar&quot;);
+     MyClassloader loader = new MyClassloader(new URL[]{file.toURL()});
+     Driver driver = (Driver) loader.loadClass(driverClass).newInstance();
+     Connection connect = driver.connect(url, properties);
 </code></pre>
 </li>
 </ol>
@@ -476,28 +476,29 @@
         
         <div class="article col s12 m6" data-aos="fade-up">
             <div class="article-badge left-badge text-color">
-                <i class="far fa-dot-circle"></i>&nbsp;本篇
-            </div>
+                <i class="fas fa-chevron-left"></i>&nbsp;上一篇</div>
             <div class="card">
-                <a href="/2020/03/16/yi-ge-cheng-xu-shi-yong-liang-ge-bu-tong-ban-ben-de-jar-bao/">
+                <a href="/2020/06/02/redhat-chi-xian-an-zhuang-mysql/">
                     <div class="card-image">
                         
                         
-                        <img src="/medias/featureimages/10.jpg" class="responsive-img" alt="一个程序使用两个不同版本的jar包">
+                        <img src="/medias/featureimages/10.jpg" class="responsive-img" alt="RedHat离线安装Mysql8.0">
                         
-                        <span class="card-title">一个程序使用两个不同版本的jar包</span>
+                        <span class="card-title">RedHat离线安装Mysql8.0</span>
                     </div>
                 </a>
                 <div class="card-content article-content">
                     <div class="summary block-with-text">
                         
-                            在项目中我们有时候需要连接不同的数据库 比如mysql5.5，mysql8.0等，这时候他们的驱动jar包的类是一样的，只是版本不同，这时候就会引发驱动加载问题，所以我们要进行手动加载不同包下的驱动类
+                            安装环境
+RedHat 7.6安装步骤
+官网下载 mysql-community-server-8.0.20-1.el7.x86_64.rpm 和 mysql-community-client-8.0.20-1.el7.x86_64.rpm
                         
                     </div>
                     <div class="publish-info">
-                            <span class="publish-date">
-                                <i class="far fa-clock fa-fw icon-date"></i>2020-03-16
-                            </span>
+                        <span class="publish-date">
+                            <i class="far fa-clock fa-fw icon-date"></i>2020-06-02
+                        </span>
                         <span class="publish-author">
                             
                             <i class="fas fa-user fa-fw"></i>
@@ -506,12 +507,19 @@
                         </span>
                     </div>
                 </div>
-
                 
                 <div class="card-action article-tags">
                     
-                    <a href="/tags/classLoader/">
-                        <span class="chip bg-color">classLoader</span>
+                    <a href="/tags/MySQL/">
+                        <span class="chip bg-color">MySQL</span>
+                    </a>
+                    
+                    <a href="/tags/RedHat/">
+                        <span class="chip bg-color">RedHat</span>
+                    </a>
+                    
+                    <a href="/tags/rpm/">
+                        <span class="chip bg-color">rpm</span>
                     </a>
                     
                 </div>

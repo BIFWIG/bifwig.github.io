@@ -40,7 +40,7 @@
 
     <script src="/libs/jquery/jquery.min.js"></script>
     
-<link rel="stylesheet" href="/css/prism-tomorrow.css" type="text/css"></head>
+</head>
 
 
 <body>
@@ -366,7 +366,7 @@
                 
                 <div class="info-break-policy">
                     <i class="far fa-file-word fa-fw"></i>文章字数:&nbsp;&nbsp;
-                    942
+                    975
                 </div>
                 
 
@@ -382,31 +382,31 @@
                 <h2 id="递归"><a href="#递归" class="headerlink" title="递归"></a>递归</h2><ul>
 <li>递归的做法比较简单，直接递归调用方法就行，三种方式仅仅是入队列的位置不同而已，这儿就直接贴代码了</li>
 </ul>
-<pre class=" language-java"><code class="language-java"><span class="token keyword">public</span> List<span class="token operator">&lt;</span>Integer<span class="token operator">></span> <span class="token function">inorderTraversal</span> <span class="token punctuation">(</span>TreeNode root<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+<pre><code class="java">public List&lt;Integer&gt; inorderTraversal (TreeNode root) {
 
-         List<span class="token operator">&lt;</span>Integer<span class="token operator">></span> list <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">ArrayList</span><span class="token operator">&lt;</span><span class="token operator">></span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-         <span class="token keyword">if</span> <span class="token punctuation">(</span>root <span class="token operator">==</span> null<span class="token punctuation">)</span> <span class="token punctuation">{</span>
-             <span class="token keyword">return</span> list<span class="token punctuation">;</span>
-         <span class="token punctuation">}</span>
-         <span class="token comment" spellcheck="true">//前序遍历</span>
-         <span class="token comment" spellcheck="true">//list.add(root.val);</span>
+         List&lt;Integer&gt; list = new ArrayList&lt;&gt;();
+         if (root == null) {
+             return list;
+         }
+         //前序遍历
+         //list.add(root.val);
 
-         <span class="token keyword">if</span> <span class="token punctuation">(</span>root<span class="token punctuation">.</span>left <span class="token operator">!=</span> null<span class="token punctuation">)</span> <span class="token punctuation">{</span>
-             List<span class="token operator">&lt;</span>Integer<span class="token operator">></span> list1 <span class="token operator">=</span> <span class="token function">inorderTraversal</span><span class="token punctuation">(</span>root<span class="token punctuation">.</span>left<span class="token punctuation">)</span><span class="token punctuation">;</span>
-             list<span class="token punctuation">.</span><span class="token function">addAll</span><span class="token punctuation">(</span>list1<span class="token punctuation">)</span><span class="token punctuation">;</span>
-         <span class="token punctuation">}</span>
-         <span class="token comment" spellcheck="true">//中序遍历</span>
-         list<span class="token punctuation">.</span><span class="token function">add</span><span class="token punctuation">(</span>root<span class="token punctuation">.</span>val<span class="token punctuation">)</span><span class="token punctuation">;</span>
+         if (root.left != null) {
+             List&lt;Integer&gt; list1 = inorderTraversal(root.left);
+             list.addAll(list1);
+         }
+         //中序遍历
+         list.add(root.val);
 
-         <span class="token keyword">if</span> <span class="token punctuation">(</span>root<span class="token punctuation">.</span>right <span class="token operator">!=</span> null<span class="token punctuation">)</span> <span class="token punctuation">{</span>
-             List<span class="token operator">&lt;</span>Integer<span class="token operator">></span> list1 <span class="token operator">=</span> <span class="token function">inorderTraversal</span><span class="token punctuation">(</span>root<span class="token punctuation">.</span>right<span class="token punctuation">)</span><span class="token punctuation">;</span>
-             list<span class="token punctuation">.</span><span class="token function">addAll</span><span class="token punctuation">(</span>list1<span class="token punctuation">)</span><span class="token punctuation">;</span>
-         <span class="token punctuation">}</span>
-         <span class="token comment" spellcheck="true">//后序遍历</span>
-         <span class="token comment" spellcheck="true">//list.add(root.val);</span>
+         if (root.right != null) {
+             List&lt;Integer&gt; list1 = inorderTraversal(root.right);
+             list.addAll(list1);
+         }
+         //后序遍历
+         //list.add(root.val);
 
-         <span class="token keyword">return</span> list<span class="token punctuation">;</span>
-     <span class="token punctuation">}</span>
+         return list;
+     }
 </code></pre>
 <h2 id="非递归"><a href="#非递归" class="headerlink" title="非递归"></a>非递归</h2><ul>
 <li>非递归的做法通常使用栈的方式处理，后续会比较麻烦一点，我们一个个来。<ol>
@@ -414,57 +414,57 @@
 </ol>
 </li>
 </ul>
-<pre class=" language-java"><code class="language-java"><span class="token keyword">public</span> List<span class="token operator">&lt;</span>Integer<span class="token operator">></span> <span class="token function">preorderTraversal_2</span> <span class="token punctuation">(</span>TreeNode root<span class="token punctuation">)</span> <span class="token punctuation">{</span>
+<pre><code class="java">public List&lt;Integer&gt; preorderTraversal_2 (TreeNode root) {
 
-         <span class="token comment" spellcheck="true">//前序遍历的顺序是《根左右》</span>
-         List<span class="token operator">&lt;</span>Integer<span class="token operator">></span> list <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">ArrayList</span><span class="token operator">&lt;</span><span class="token operator">></span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-         TreeNode temp <span class="token operator">=</span> root<span class="token punctuation">;</span>
-         Stack<span class="token operator">&lt;</span>TreeNode<span class="token operator">></span> stack <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">Stack</span><span class="token operator">&lt;</span><span class="token operator">></span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-         <span class="token keyword">while</span> <span class="token punctuation">(</span>temp <span class="token operator">!=</span> null <span class="token operator">||</span> <span class="token operator">!</span>stack<span class="token punctuation">.</span><span class="token function">isEmpty</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
-             <span class="token comment" spellcheck="true">//节点非空就入栈</span>
-             <span class="token keyword">while</span> <span class="token punctuation">(</span>temp <span class="token operator">!=</span> null<span class="token punctuation">)</span> <span class="token punctuation">{</span>
-                 <span class="token comment" spellcheck="true">//根节点先直接输出</span>
-                 list<span class="token punctuation">.</span><span class="token function">add</span><span class="token punctuation">(</span>temp<span class="token punctuation">.</span>val<span class="token punctuation">)</span><span class="token punctuation">;</span>
-                 stack<span class="token punctuation">.</span><span class="token function">push</span><span class="token punctuation">(</span>temp<span class="token punctuation">)</span><span class="token punctuation">;</span>
-                 <span class="token comment" spellcheck="true">//一路往左子树深入</span>
-                 temp <span class="token operator">=</span> temp<span class="token punctuation">.</span>left<span class="token punctuation">;</span>
-             <span class="token punctuation">}</span>
-             <span class="token comment" spellcheck="true">//开始弹出堆栈，处理右子树</span>
-             <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token operator">!</span>stack<span class="token punctuation">.</span><span class="token function">isEmpty</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
-                 temp <span class="token operator">=</span> stack<span class="token punctuation">.</span><span class="token function">pop</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-                 temp <span class="token operator">=</span> temp<span class="token punctuation">.</span>right<span class="token punctuation">;</span>
-             <span class="token punctuation">}</span>
-         <span class="token punctuation">}</span>
+         //前序遍历的顺序是《根左右》
+         List&lt;Integer&gt; list = new ArrayList&lt;&gt;();
+         TreeNode temp = root;
+         Stack&lt;TreeNode&gt; stack = new Stack&lt;&gt;();
+         while (temp != null || !stack.isEmpty()) {
+             //节点非空就入栈
+             while (temp != null) {
+                 //根节点先直接输出
+                 list.add(temp.val);
+                 stack.push(temp);
+                 //一路往左子树深入
+                 temp = temp.left;
+             }
+             //开始弹出堆栈，处理右子树
+             if (!stack.isEmpty()) {
+                 temp = stack.pop();
+                 temp = temp.right;
+             }
+         }
 
-         <span class="token keyword">return</span> list<span class="token punctuation">;</span>
-     <span class="token punctuation">}</span>
+         return list;
+     }
 </code></pre>
 <ol start="2">
 <li>中序遍历</li>
 </ol>
-<pre class=" language-java"><code class="language-java">     <span class="token keyword">public</span> List<span class="token operator">&lt;</span>Integer<span class="token operator">></span> <span class="token function">inorderTraversal_2</span> <span class="token punctuation">(</span>TreeNode root<span class="token punctuation">)</span> <span class="token punctuation">{</span>
-          <span class="token comment" spellcheck="true">//前序遍历的顺序是《左根右》</span>
-         List<span class="token operator">&lt;</span>Integer<span class="token operator">></span> list <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">ArrayList</span><span class="token operator">&lt;</span><span class="token operator">></span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-         TreeNode temp <span class="token operator">=</span> root<span class="token punctuation">;</span>
-         Stack<span class="token operator">&lt;</span>TreeNode<span class="token operator">></span> stack <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">Stack</span><span class="token operator">&lt;</span><span class="token operator">></span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-         <span class="token keyword">while</span> <span class="token punctuation">(</span>temp <span class="token operator">!=</span> null <span class="token operator">||</span> <span class="token operator">!</span>stack<span class="token punctuation">.</span><span class="token function">isEmpty</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
-             <span class="token keyword">while</span> <span class="token punctuation">(</span>temp <span class="token operator">!=</span> null<span class="token punctuation">)</span> <span class="token punctuation">{</span>
-                 <span class="token comment" spellcheck="true">//一路往左子树深入</span>
-                 stack<span class="token punctuation">.</span><span class="token function">push</span><span class="token punctuation">(</span>temp<span class="token punctuation">)</span><span class="token punctuation">;</span>
-                 temp <span class="token operator">=</span> temp<span class="token punctuation">.</span>left<span class="token punctuation">;</span>
-             <span class="token punctuation">}</span>
-             <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token operator">!</span>stack<span class="token punctuation">.</span><span class="token function">isEmpty</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
-                 <span class="token comment" spellcheck="true">//弹出最后一个左子树的节点</span>
-                 temp <span class="token operator">=</span> stack<span class="token punctuation">.</span><span class="token function">pop</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-                 <span class="token comment" spellcheck="true">//输出当前值</span>
-                 list<span class="token punctuation">.</span><span class="token function">add</span><span class="token punctuation">(</span>temp<span class="token punctuation">.</span>val<span class="token punctuation">)</span><span class="token punctuation">;</span>
-                 <span class="token comment" spellcheck="true">//往当前节点的右子树深入</span>
-                 temp <span class="token operator">=</span> temp<span class="token punctuation">.</span>right<span class="token punctuation">;</span>
-             <span class="token punctuation">}</span>
-         <span class="token punctuation">}</span>
+<pre><code class="java">     public List&lt;Integer&gt; inorderTraversal_2 (TreeNode root) {
+          //前序遍历的顺序是《左根右》
+         List&lt;Integer&gt; list = new ArrayList&lt;&gt;();
+         TreeNode temp = root;
+         Stack&lt;TreeNode&gt; stack = new Stack&lt;&gt;();
+         while (temp != null || !stack.isEmpty()) {
+             while (temp != null) {
+                 //一路往左子树深入
+                 stack.push(temp);
+                 temp = temp.left;
+             }
+             if (!stack.isEmpty()) {
+                 //弹出最后一个左子树的节点
+                 temp = stack.pop();
+                 //输出当前值
+                 list.add(temp.val);
+                 //往当前节点的右子树深入
+                 temp = temp.right;
+             }
+         }
 
-         <span class="token keyword">return</span> list<span class="token punctuation">;</span>
-     <span class="token punctuation">}</span>
+         return list;
+     }
 </code></pre>
 <ol start="3">
 <li><p>后序遍历</p>
@@ -473,103 +473,103 @@
 </ul>
 </li>
 </ol>
-<pre class=" language-java"><code class="language-java"><span class="token comment" spellcheck="true">/**
+<pre><code class="java">/**
       * 描述 后序遍历 非递归
       * 左边到最底层-》第一次出栈-》右边到最底层-》第二次出栈-》记录
       * @param root
-      * @return java.util.List&lt;java.lang.Integer>
+      * @return java.util.List&lt;java.lang.Integer&gt;
       * @author Ted Wang
       * @created 2019/5/27 15:02
-      **/</span>
-     <span class="token keyword">public</span> List<span class="token operator">&lt;</span>Integer<span class="token operator">></span> <span class="token function">postorderTraversal</span> <span class="token punctuation">(</span>TreeNode root<span class="token punctuation">)</span> <span class="token punctuation">{</span>
-         List<span class="token operator">&lt;</span>Integer<span class="token operator">></span> list <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">ArrayList</span><span class="token operator">&lt;</span><span class="token operator">></span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-         Stack<span class="token operator">&lt;</span>TreeNode<span class="token operator">></span> stack <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">Stack</span><span class="token operator">&lt;</span><span class="token operator">></span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-         TreeNode temp <span class="token operator">=</span> root<span class="token punctuation">;</span>
-         TreeNode last <span class="token operator">=</span> null<span class="token punctuation">;</span>
-         <span class="token comment" spellcheck="true">//走到左子树最底层</span>
-         <span class="token keyword">while</span> <span class="token punctuation">(</span>temp <span class="token operator">!=</span> null<span class="token punctuation">)</span> <span class="token punctuation">{</span>
-             stack<span class="token punctuation">.</span><span class="token function">push</span><span class="token punctuation">(</span>temp<span class="token punctuation">)</span><span class="token punctuation">;</span>
-             temp <span class="token operator">=</span> temp<span class="token punctuation">.</span>left<span class="token punctuation">;</span>
-         <span class="token punctuation">}</span>
+      **/
+     public List&lt;Integer&gt; postorderTraversal (TreeNode root) {
+         List&lt;Integer&gt; list = new ArrayList&lt;&gt;();
+         Stack&lt;TreeNode&gt; stack = new Stack&lt;&gt;();
+         TreeNode temp = root;
+         TreeNode last = null;
+         //走到左子树最底层
+         while (temp != null) {
+             stack.push(temp);
+             temp = temp.left;
+         }
 
-         <span class="token keyword">while</span> <span class="token punctuation">(</span><span class="token operator">!</span>stack<span class="token punctuation">.</span><span class="token function">isEmpty</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
-             temp <span class="token operator">=</span> stack<span class="token punctuation">.</span><span class="token function">pop</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-             <span class="token keyword">if</span> <span class="token punctuation">(</span>temp<span class="token punctuation">.</span>right <span class="token operator">!=</span> null <span class="token operator">&amp;&amp;</span> <span class="token operator">!</span>temp<span class="token punctuation">.</span>right<span class="token punctuation">.</span><span class="token function">equals</span><span class="token punctuation">(</span>last<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
-                 stack<span class="token punctuation">.</span><span class="token function">push</span><span class="token punctuation">(</span>temp<span class="token punctuation">)</span><span class="token punctuation">;</span>
-                 temp <span class="token operator">=</span> temp<span class="token punctuation">.</span>right<span class="token punctuation">;</span>
-                 <span class="token keyword">while</span> <span class="token punctuation">(</span>temp <span class="token operator">!=</span> null<span class="token punctuation">)</span> <span class="token punctuation">{</span>
-                     <span class="token comment" spellcheck="true">//走到右子树的最左边</span>
-                     stack<span class="token punctuation">.</span><span class="token function">push</span><span class="token punctuation">(</span>temp<span class="token punctuation">)</span><span class="token punctuation">;</span>
-                     temp <span class="token operator">=</span> temp<span class="token punctuation">.</span>left<span class="token punctuation">;</span>
-                 <span class="token punctuation">}</span>
-             <span class="token punctuation">}</span> <span class="token keyword">else</span> <span class="token punctuation">{</span>
-                 <span class="token comment" spellcheck="true">//没有右子树或者右子树已经遍历完成，输出该节点</span>
-                 list<span class="token punctuation">.</span><span class="token function">add</span><span class="token punctuation">(</span>temp<span class="token punctuation">.</span>val<span class="token punctuation">)</span><span class="token punctuation">;</span>
-                 last <span class="token operator">=</span> temp<span class="token punctuation">;</span>
-             <span class="token punctuation">}</span>
-         <span class="token punctuation">}</span>
-         <span class="token keyword">return</span> list<span class="token punctuation">;</span>
-     <span class="token punctuation">}</span>
+         while (!stack.isEmpty()) {
+             temp = stack.pop();
+             if (temp.right != null &amp;&amp; !temp.right.equals(last)) {
+                 stack.push(temp);
+                 temp = temp.right;
+                 while (temp != null) {
+                     //走到右子树的最左边
+                     stack.push(temp);
+                     temp = temp.left;
+                 }
+             } else {
+                 //没有右子树或者右子树已经遍历完成，输出该节点
+                 list.add(temp.val);
+                 last = temp;
+             }
+         }
+         return list;
+     }
 </code></pre>
 <ul>
 <li>逆序做法，因为<strong>前序遍历</strong> 是 《根 左 右》，而 <strong>后序遍历</strong>是 《左 右 根》，所以只需要把<strong>前序遍历</strong>的遍历顺序改为《根 右 左》此时就正好是<strong>后续遍历</strong>的逆序遍历，把输出结果逆序输出就行</li>
 </ul>
-<pre class=" language-java"><code class="language-java">     <span class="token comment" spellcheck="true">/**
+<pre><code class="java">     /**
       * 描述 后序遍历 非递归
       * 前序 :根左右 改成 根右左 =》逆序 左右根（后序遍历）
       * @param root
-      * @return java.util.List&lt;java.lang.Integer>
+      * @return java.util.List&lt;java.lang.Integer&gt;
       * @author Ted Wang
       * @created 2019/5/27 15:02
-      **/</span>
-     <span class="token keyword">public</span> List<span class="token operator">&lt;</span>Integer<span class="token operator">></span> <span class="token function">postorderTraversal2</span> <span class="token punctuation">(</span>TreeNode root<span class="token punctuation">)</span> <span class="token punctuation">{</span>
-         List<span class="token operator">&lt;</span>Integer<span class="token operator">></span> list <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">ArrayList</span><span class="token operator">&lt;</span><span class="token operator">></span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-         TreeNode temp <span class="token operator">=</span> root<span class="token punctuation">;</span>
-         Stack<span class="token operator">&lt;</span>TreeNode<span class="token operator">></span> stack <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">Stack</span><span class="token operator">&lt;</span><span class="token operator">></span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-         <span class="token keyword">while</span> <span class="token punctuation">(</span>temp <span class="token operator">!=</span> null <span class="token operator">||</span> <span class="token operator">!</span>stack<span class="token punctuation">.</span><span class="token function">isEmpty</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
-             <span class="token keyword">while</span> <span class="token punctuation">(</span>temp <span class="token operator">!=</span> null<span class="token punctuation">)</span> <span class="token punctuation">{</span>
-                 list<span class="token punctuation">.</span><span class="token function">add</span><span class="token punctuation">(</span>temp<span class="token punctuation">.</span>val<span class="token punctuation">)</span><span class="token punctuation">;</span>
-                 stack<span class="token punctuation">.</span><span class="token function">push</span><span class="token punctuation">(</span>temp<span class="token punctuation">)</span><span class="token punctuation">;</span>
-                 temp <span class="token operator">=</span> temp<span class="token punctuation">.</span>right<span class="token punctuation">;</span>
-             <span class="token punctuation">}</span>
-             <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token operator">!</span>stack<span class="token punctuation">.</span><span class="token function">isEmpty</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
-                 temp <span class="token operator">=</span> stack<span class="token punctuation">.</span><span class="token function">pop</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-                 temp <span class="token operator">=</span> temp<span class="token punctuation">.</span>left<span class="token punctuation">;</span>
-             <span class="token punctuation">}</span>
-         <span class="token punctuation">}</span>
-         Collections<span class="token punctuation">.</span><span class="token function">reverse</span><span class="token punctuation">(</span>list<span class="token punctuation">)</span><span class="token punctuation">;</span>
+      **/
+     public List&lt;Integer&gt; postorderTraversal2 (TreeNode root) {
+         List&lt;Integer&gt; list = new ArrayList&lt;&gt;();
+         TreeNode temp = root;
+         Stack&lt;TreeNode&gt; stack = new Stack&lt;&gt;();
+         while (temp != null || !stack.isEmpty()) {
+             while (temp != null) {
+                 list.add(temp.val);
+                 stack.push(temp);
+                 temp = temp.right;
+             }
+             if (!stack.isEmpty()) {
+                 temp = stack.pop();
+                 temp = temp.left;
+             }
+         }
+         Collections.reverse(list);
 
-         <span class="token keyword">return</span> list<span class="token punctuation">;</span>
-     <span class="token punctuation">}</span>
+         return list;
+     }
 
-  <span class="token comment" spellcheck="true">/**
+  /**
       * 描述 后序遍历 非递归 
       * 前序 :根左右 改成 根右左 =》逆序 左右根（后序遍历）
       * 思路和上面的方法一致，只是list在保存的时候直接逆序保存
       * @param root
-      * @return java.util.List&lt;java.lang.Integer>
+      * @return java.util.List&lt;java.lang.Integer&gt;
       * @author Ted Wang
       * @created 2019/5/27 15:02
-   **/</span>
-<span class="token keyword">public</span> List<span class="token operator">&lt;</span>Integer<span class="token operator">></span> <span class="token function">postorderTraversal3</span> <span class="token punctuation">(</span>TreeNode root<span class="token punctuation">)</span> <span class="token punctuation">{</span>
-         List<span class="token operator">&lt;</span>Integer<span class="token operator">></span> list <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">ArrayList</span><span class="token operator">&lt;</span><span class="token operator">></span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-         TreeNode temp <span class="token operator">=</span> root<span class="token punctuation">;</span>
-         Stack<span class="token operator">&lt;</span>TreeNode<span class="token operator">></span> stack <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">Stack</span><span class="token operator">&lt;</span><span class="token operator">></span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-         stack<span class="token punctuation">.</span><span class="token function">push</span><span class="token punctuation">(</span>root<span class="token punctuation">)</span><span class="token punctuation">;</span>
-         <span class="token keyword">while</span> <span class="token punctuation">(</span><span class="token operator">!</span>stack<span class="token punctuation">.</span><span class="token function">isEmpty</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
-             temp <span class="token operator">=</span> root<span class="token punctuation">;</span>
-             list<span class="token punctuation">.</span><span class="token function">add</span><span class="token punctuation">(</span><span class="token number">0</span><span class="token punctuation">,</span> temp<span class="token punctuation">.</span>val<span class="token punctuation">)</span><span class="token punctuation">;</span>
-              <span class="token keyword">if</span> <span class="token punctuation">(</span>temp<span class="token punctuation">.</span>left<span class="token operator">!=</span>null<span class="token punctuation">)</span><span class="token punctuation">{</span>
-                  stack<span class="token punctuation">.</span><span class="token function">push</span><span class="token punctuation">(</span>temp<span class="token punctuation">.</span>left<span class="token punctuation">)</span><span class="token punctuation">;</span>
-              <span class="token punctuation">}</span>
-              <span class="token keyword">if</span> <span class="token punctuation">(</span>temp<span class="token punctuation">.</span>right<span class="token operator">!=</span>null<span class="token punctuation">)</span><span class="token punctuation">{</span>
-                  stack<span class="token punctuation">.</span><span class="token function">push</span><span class="token punctuation">(</span>temp<span class="token punctuation">.</span>right<span class="token punctuation">)</span><span class="token punctuation">;</span>
-              <span class="token punctuation">}</span>
-         <span class="token punctuation">}</span>
+   **/
+public List&lt;Integer&gt; postorderTraversal3 (TreeNode root) {
+         List&lt;Integer&gt; list = new ArrayList&lt;&gt;();
+         TreeNode temp = root;
+         Stack&lt;TreeNode&gt; stack = new Stack&lt;&gt;();
+         stack.push(root);
+         while (!stack.isEmpty()) {
+             temp = root;
+             list.add(0, temp.val);
+              if (temp.left!=null){
+                  stack.push(temp.left);
+              }
+              if (temp.right!=null){
+                  stack.push(temp.right);
+              }
+         }
 
 
-         <span class="token keyword">return</span> list<span class="token punctuation">;</span>
-    <span class="token punctuation">}</span>
+         return list;
+    }
 </code></pre>
 <p>​    </p>
 
@@ -729,35 +729,53 @@ tar -xvzf zookeeper-3.4.14.tar.
         
         <div class="article col s12 m6" data-aos="fade-up">
             <div class="article-badge right-badge text-color">
-                下一篇&nbsp;<i class="fas fa-chevron-right"></i>
+                本篇&nbsp;<i class="far fa-dot-circle"></i>
             </div>
             <div class="card">
-                <a href="/2019/05/29/hello-world/">
+                <a href="/2019/05/31/er-cha-shu-de-qian-xu-zhong-xu-hou-xu-bian-li/">
                     <div class="card-image">
                         
                         
-                        <img src="/medias/featureimages/12.jpg" class="responsive-img" alt="Hello World">
+                        <img src="/medias/featureimages/16.jpg" class="responsive-img" alt="二叉树的前序，中序，后续遍历">
                         
-                        <span class="card-title">Hello World</span>
+                        <span class="card-title">二叉树的前序，中序，后续遍历</span>
                     </div>
                 </a>
                 <div class="card-content article-content">
                     <div class="summary block-with-text">
                         
-                            Welcome to Hexo! This is your very first post. Check documentation for more info. If you get any problems when using Hex
+                            递归
+递归的做法比较简单，直接递归调用方法就行，三种方式仅仅是入队列的位置不同而已，这儿就直接贴代码了
+
+public List&lt;Integer&gt; inorderTraversal (TreeNode root) {
+
+    
                         
                     </div>
                     <div class="publish-info">
                             <span class="publish-date">
-                                <i class="far fa-clock fa-fw icon-date"></i>2019-05-29
+                                <i class="far fa-clock fa-fw icon-date"></i>2019-05-31
                             </span>
                         <span class="publish-author">
                             
-                            <i class="fas fa-user fa-fw"></i>
-                            BIF
+                            <i class="fas fa-bookmark fa-fw icon-category"></i>
+                            
+                            <a href="/categories/algorithm/" class="post-category">
+                                    algorithm
+                                </a>
+                            
                             
                         </span>
                     </div>
+                </div>
+
+                
+                <div class="card-action article-tags">
+                    
+                    <a href="/tags/Java/">
+                        <span class="chip bg-color">Java</span>
+                    </a>
+                    
                 </div>
                 
             </div>

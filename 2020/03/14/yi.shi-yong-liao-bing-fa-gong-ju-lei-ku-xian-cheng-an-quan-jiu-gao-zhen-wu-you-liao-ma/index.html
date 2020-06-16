@@ -40,7 +40,7 @@
 
     <script src="/libs/jquery/jquery.min.js"></script>
     
-<link rel="stylesheet" href="/css/prism-tomorrow.css" type="text/css"></head>
+</head>
 
 
 <body>
@@ -370,7 +370,7 @@
                 
                 <div class="info-break-policy">
                     <i class="far fa-file-word fa-fw"></i>文章字数:&nbsp;&nbsp;
-                    3.1k
+                    3.3k
                 </div>
                 
 
@@ -385,115 +385,115 @@
             <div id="articleContent">
                 <h3 id="没有意识到线程重用导致用户信息错乱的Bug"><a href="#没有意识到线程重用导致用户信息错乱的Bug" class="headerlink" title="没有意识到线程重用导致用户信息错乱的Bug"></a>没有意识到线程重用导致用户信息错乱的Bug</h3><ul>
 <li><p>ThrealLocal 会重复利用线程池的线程，将springBoot中的配置文件添加<code>server.tomcat.max-threads=1</code> 此时Tomcat只有一个线程在运行，这时候这段代码就会出现问题</p>
-<pre class=" language-java"><code class="language-java"><span class="token annotation punctuation">@GetMapping</span><span class="token punctuation">(</span><span class="token string">"wrong"</span><span class="token punctuation">)</span>
-<span class="token keyword">public</span> Map<span class="token operator">&lt;</span>String<span class="token punctuation">,</span>Object<span class="token operator">></span> <span class="token function">wrong</span><span class="token punctuation">(</span><span class="token annotation punctuation">@RequestParam</span><span class="token punctuation">(</span><span class="token string">"userId"</span><span class="token punctuation">)</span> Integer userId<span class="token punctuation">)</span><span class="token punctuation">{</span>
-    String before <span class="token operator">=</span> Thread<span class="token punctuation">.</span><span class="token function">currentThread</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">getName</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token operator">+</span><span class="token string">":"</span><span class="token operator">+</span>currentUser<span class="token punctuation">.</span><span class="token function">get</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-    currentUser<span class="token punctuation">.</span><span class="token function">set</span><span class="token punctuation">(</span>userId<span class="token punctuation">)</span><span class="token punctuation">;</span>
-    String after <span class="token operator">=</span> Thread<span class="token punctuation">.</span><span class="token function">currentThread</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">getName</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token operator">+</span><span class="token string">":"</span><span class="token operator">+</span>currentUser<span class="token punctuation">.</span><span class="token function">get</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-    Map<span class="token operator">&lt;</span>String<span class="token punctuation">,</span> Object<span class="token operator">></span> map  <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">HashMap</span><span class="token operator">&lt;</span><span class="token operator">></span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<pre><code class="java">@GetMapping(&quot;wrong&quot;)
+public Map&lt;String,Object&gt; wrong(@RequestParam(&quot;userId&quot;) Integer userId){
+    String before = Thread.currentThread().getName()+&quot;:&quot;+currentUser.get();
+    currentUser.set(userId);
+    String after = Thread.currentThread().getName()+&quot;:&quot;+currentUser.get();
+    Map&lt;String, Object&gt; map  = new HashMap&lt;&gt;();
 
-    map<span class="token punctuation">.</span><span class="token function">put</span><span class="token punctuation">(</span><span class="token string">"before"</span><span class="token punctuation">,</span>before<span class="token punctuation">)</span><span class="token punctuation">;</span>
-    map<span class="token punctuation">.</span><span class="token function">put</span><span class="token punctuation">(</span><span class="token string">"after"</span><span class="token punctuation">,</span>after<span class="token punctuation">)</span><span class="token punctuation">;</span>
+    map.put(&quot;before&quot;,before);
+    map.put(&quot;after&quot;,after);
 
-    <span class="token keyword">return</span> map<span class="token punctuation">;</span>
-<span class="token punctuation">}</span>
+    return map;
+}
 </code></pre>
 <p>在第二个请求的时候 会获取到第一次的<strong>UserID</strong> </p>
-<pre class=" language-json"><code class="language-json"><span class="token punctuation">{</span>
-  <span class="token property">"before"</span><span class="token operator">:</span> <span class="token string">"http-nio-8080-exec-1:1"</span><span class="token punctuation">,</span>
-  <span class="token property">"after"</span><span class="token operator">:</span> <span class="token string">"http-nio-8080-exec-1:2"</span>
-<span class="token punctuation">}</span>
+<pre><code class="json">{
+  &quot;before&quot;: &quot;http-nio-8080-exec-1:1&quot;,
+  &quot;after&quot;: &quot;http-nio-8080-exec-1:2&quot;
+}
 </code></pre>
 <p>按理说，在设置用户信息之前第一次获取的值始终应该是 null，但我们要意识到，程序运行在 Tomcat 中，执行程序的线程是 Tomcat 的工作线程，而 Tomcat 的工作线程是基于线程池的。顾名思义，线程池会重用固定的几个线程，一旦<strong>线程重用</strong>，那么很可能首次从 ThreadLocal 获取的值是之前其他用户的请求遗留的值。这时，ThreadLocal 中的用户信息就是其他用户的信息。</p>
 </li>
 <li><p>不能认为没有<strong>显示</strong>的开启多线程或者使用线程池 就没有线程安全的风险。</p>
 </li>
 <li><p>线程创建的代价比较贵，所以服务器会节省这部分的开销，使用线程池进行处理请求，Tomcat默认的线程池大小是<em>200</em> 代码中如果只是临时使用ThreadLocal变量，需要在使用结束后手动置空，防止被后续的请求给复用。</p>
-<pre class=" language-java"><code class="language-java">  <span class="token annotation punctuation">@GetMapping</span><span class="token punctuation">(</span><span class="token string">"right"</span><span class="token punctuation">)</span>
-    <span class="token keyword">public</span> Map<span class="token operator">&lt;</span>String<span class="token punctuation">,</span>Object<span class="token operator">></span> <span class="token function">right</span><span class="token punctuation">(</span><span class="token annotation punctuation">@RequestParam</span><span class="token punctuation">(</span><span class="token string">"userId"</span><span class="token punctuation">)</span> Integer userId<span class="token punctuation">)</span><span class="token punctuation">{</span>
+<pre><code class="java">  @GetMapping(&quot;right&quot;)
+    public Map&lt;String,Object&gt; right(@RequestParam(&quot;userId&quot;) Integer userId){
 
-        Map<span class="token operator">&lt;</span>String<span class="token punctuation">,</span> Object<span class="token operator">></span> map<span class="token punctuation">;</span>
-        <span class="token keyword">try</span> <span class="token punctuation">{</span>
-            String before <span class="token operator">=</span> Thread<span class="token punctuation">.</span><span class="token function">currentThread</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">getName</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token operator">+</span><span class="token string">":"</span><span class="token operator">+</span>currentUser<span class="token punctuation">.</span><span class="token function">get</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-            currentUser<span class="token punctuation">.</span><span class="token function">set</span><span class="token punctuation">(</span>userId<span class="token punctuation">)</span><span class="token punctuation">;</span>
-            String after <span class="token operator">=</span> Thread<span class="token punctuation">.</span><span class="token function">currentThread</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">getName</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token operator">+</span><span class="token string">":"</span><span class="token operator">+</span>currentUser<span class="token punctuation">.</span><span class="token function">get</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-            map <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">HashMap</span><span class="token operator">&lt;</span><span class="token operator">></span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-            map<span class="token punctuation">.</span><span class="token function">put</span><span class="token punctuation">(</span><span class="token string">"before"</span><span class="token punctuation">,</span>before<span class="token punctuation">)</span><span class="token punctuation">;</span>
-            map<span class="token punctuation">.</span><span class="token function">put</span><span class="token punctuation">(</span><span class="token string">"after"</span><span class="token punctuation">,</span>after<span class="token punctuation">)</span><span class="token punctuation">;</span>
-            <span class="token keyword">return</span> map<span class="token punctuation">;</span>
-        <span class="token punctuation">}</span> <span class="token keyword">finally</span> <span class="token punctuation">{</span>
-            currentUser<span class="token punctuation">.</span><span class="token function">remove</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-        <span class="token punctuation">}</span>
-    <span class="token punctuation">}</span>
+        Map&lt;String, Object&gt; map;
+        try {
+            String before = Thread.currentThread().getName()+&quot;:&quot;+currentUser.get();
+            currentUser.set(userId);
+            String after = Thread.currentThread().getName()+&quot;:&quot;+currentUser.get();
+            map = new HashMap&lt;&gt;();
+            map.put(&quot;before&quot;,before);
+            map.put(&quot;after&quot;,after);
+            return map;
+        } finally {
+            currentUser.remove();
+        }
+    }
 </code></pre>
 </li>
 </ul>
 <h3 id="使用了线程安全的并发工具，并不代表解决了所有线程安全问题"><a href="#使用了线程安全的并发工具，并不代表解决了所有线程安全问题" class="headerlink" title="使用了线程安全的并发工具，并不代表解决了所有线程安全问题"></a>使用了线程安全的并发工具，并不代表解决了所有线程安全问题</h3><ul>
 <li><p><strong>ConcurrentHashMap</strong> 只保证原子性的读写是线程安全的， 不代表对多个操作之间的状态是一致的，如果有其他线程在同时操作它，此时仍需要手动进行加锁</p>
-<pre class=" language-java"><code class="language-java">    <span class="token comment" spellcheck="true">//线程个数</span>
-    <span class="token keyword">private</span> <span class="token keyword">static</span> <span class="token keyword">int</span> THREAD_COUNT <span class="token operator">=</span> <span class="token number">10</span><span class="token punctuation">;</span>
-    <span class="token comment" spellcheck="true">// 总元素数量</span>
-    <span class="token keyword">private</span> <span class="token keyword">static</span> <span class="token keyword">int</span> ITEM_COUNT <span class="token operator">=</span> <span class="token number">1000</span><span class="token punctuation">;</span>
-    <span class="token comment" spellcheck="true">//帮助方法，用来获得一个指定元素数量模拟数据的</span>
-    <span class="token keyword">private</span> ConcurrentHashMap<span class="token operator">&lt;</span>String<span class="token punctuation">,</span>Long<span class="token operator">></span> <span class="token function">getData</span> <span class="token punctuation">(</span><span class="token keyword">int</span> count<span class="token punctuation">)</span> <span class="token punctuation">{</span>
-        <span class="token keyword">return</span> LongStream
-                <span class="token punctuation">.</span><span class="token function">rangeClosed</span><span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">,</span> count<span class="token punctuation">)</span>
-                <span class="token punctuation">.</span><span class="token function">boxed</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
-                <span class="token punctuation">.</span><span class="token function">collect</span><span class="token punctuation">(</span>Collectors
-                        <span class="token punctuation">.</span><span class="token function">toConcurrentMap</span><span class="token punctuation">(</span>i <span class="token operator">-</span><span class="token operator">></span> UUID<span class="token punctuation">.</span><span class="token function">randomUUID</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
-                                <span class="token punctuation">.</span><span class="token function">toString</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
-                                Function<span class="token punctuation">.</span><span class="token function">identity</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
-                                <span class="token punctuation">(</span>o1<span class="token punctuation">,</span> o2<span class="token punctuation">)</span> <span class="token operator">-</span><span class="token operator">></span> o1<span class="token punctuation">,</span> ConcurrentHashMap<span class="token operator">:</span><span class="token operator">:</span><span class="token keyword">new</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-    <span class="token punctuation">}</span>
+<pre><code class="java">    //线程个数
+    private static int THREAD_COUNT = 10;
+    // 总元素数量
+    private static int ITEM_COUNT = 1000;
+    //帮助方法，用来获得一个指定元素数量模拟数据的
+    private ConcurrentHashMap&lt;String,Long&gt; getData (int count) {
+        return LongStream
+                .rangeClosed(1, count)
+                .boxed()
+                .collect(Collectors
+                        .toConcurrentMap(i -&gt; UUID.randomUUID()
+                                .toString(),
+                                Function.identity(),
+                                (o1, o2) -&gt; o1, ConcurrentHashMap::new));
+    }
 
-<span class="token annotation punctuation">@GetMapping</span><span class="token punctuation">(</span><span class="token string">"wrong"</span><span class="token punctuation">)</span>
-    <span class="token keyword">public</span> <span class="token keyword">void</span> <span class="token function">wrong</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">{</span>
-        ConcurrentHashMap<span class="token operator">&lt;</span>String<span class="token punctuation">,</span>Long<span class="token operator">></span> concurrentHashMap <span class="token operator">=</span> <span class="token function">getData</span><span class="token punctuation">(</span>ITEM_COUNT<span class="token operator">-</span><span class="token number">100</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-        log<span class="token punctuation">.</span><span class="token function">info</span><span class="token punctuation">(</span><span class="token string">"init Size{}"</span><span class="token punctuation">,</span>concurrentHashMap<span class="token punctuation">.</span><span class="token function">size</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-        ForkJoinPool forkJoinPool <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">ForkJoinPool</span><span class="token punctuation">(</span>THREAD_COUNT<span class="token punctuation">)</span><span class="token punctuation">;</span>
-        forkJoinPool<span class="token punctuation">.</span><span class="token function">execute</span><span class="token punctuation">(</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">-</span><span class="token operator">></span> IntStream<span class="token punctuation">.</span><span class="token function">rangeClosed</span><span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">,</span><span class="token number">10</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">parallel</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">forEach</span><span class="token punctuation">(</span>value <span class="token operator">-</span><span class="token operator">></span> <span class="token punctuation">{</span>
-            <span class="token keyword">if</span> <span class="token punctuation">(</span>ITEM_COUNT <span class="token operator">-</span> concurrentHashMap<span class="token punctuation">.</span><span class="token function">size</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token operator">></span><span class="token number">0</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
-                <span class="token keyword">int</span> a <span class="token operator">=</span> ITEM_COUNT <span class="token operator">-</span> concurrentHashMap<span class="token punctuation">.</span><span class="token function">size</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">;</span>
-                log<span class="token punctuation">.</span><span class="token function">info</span><span class="token punctuation">(</span><span class="token string">"a size {}"</span><span class="token punctuation">,</span>a<span class="token punctuation">)</span><span class="token punctuation">;</span>
-                concurrentHashMap<span class="token punctuation">.</span><span class="token function">putAll</span><span class="token punctuation">(</span><span class="token function">getData</span><span class="token punctuation">(</span>a<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-            <span class="token punctuation">}</span>
-        <span class="token punctuation">}</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-        forkJoinPool<span class="token punctuation">.</span><span class="token function">shutdown</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-        forkJoinPool<span class="token punctuation">.</span><span class="token function">awaitQuiescence</span><span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">,</span> TimeUnit<span class="token punctuation">.</span>HOURS<span class="token punctuation">)</span><span class="token punctuation">;</span>
-        log<span class="token punctuation">.</span><span class="token function">info</span><span class="token punctuation">(</span><span class="token string">"finish Size {}"</span><span class="token punctuation">,</span>concurrentHashMap<span class="token punctuation">.</span><span class="token function">size</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-    <span class="token punctuation">}</span>    
+@GetMapping(&quot;wrong&quot;)
+    public void wrong(){
+        ConcurrentHashMap&lt;String,Long&gt; concurrentHashMap = getData(ITEM_COUNT-100);
+        log.info(&quot;init Size{}&quot;,concurrentHashMap.size());
+        ForkJoinPool forkJoinPool = new ForkJoinPool(THREAD_COUNT);
+        forkJoinPool.execute(() -&gt; IntStream.rangeClosed(1,10).parallel().forEach(value -&gt; {
+            if (ITEM_COUNT - concurrentHashMap.size()&gt;0) {
+                int a = ITEM_COUNT - concurrentHashMap.size() ;
+                log.info(&quot;a size {}&quot;,a);
+                concurrentHashMap.putAll(getData(a));
+            }
+        }));
+        forkJoinPool.shutdown();
+        forkJoinPool.awaitQuiescence(1, TimeUnit.HOURS);
+        log.info(&quot;finish Size {}&quot;,concurrentHashMap.size());
+    }    
 </code></pre>
-<pre class=" language-verilog"><code class="language-verilog">INFO <span class="token number">33005</span> <span class="token operator">---</span> <span class="token punctuation">[</span>nio<span class="token operator">-</span><span class="token number">8080</span><span class="token operator">-</span>exec<span class="token operator">-</span><span class="token number">1</span><span class="token punctuation">]</span> c<span class="token punctuation">.</span>b<span class="token punctuation">.</span>c<span class="token punctuation">.</span>m<span class="token punctuation">.</span>c<span class="token punctuation">.</span>c<span class="token punctuation">.</span>MapError<span class="token punctuation">:</span> init Size900
-INFO <span class="token number">33005</span> <span class="token operator">---</span> <span class="token punctuation">[</span>nio<span class="token operator">-</span><span class="token number">8080</span><span class="token operator">-</span>exec<span class="token operator">-</span><span class="token number">1</span><span class="token punctuation">]</span> c<span class="token punctuation">.</span>b<span class="token punctuation">.</span>c<span class="token punctuation">.</span>m<span class="token punctuation">.</span>c<span class="token punctuation">.</span>c<span class="token punctuation">.</span>MapError<span class="token punctuation">:</span> a size <span class="token number">100</span>
-INFO <span class="token number">33005</span> <span class="token operator">---</span> <span class="token punctuation">[</span>onPool<span class="token operator">-</span>worker<span class="token operator">-</span><span class="token number">2</span><span class="token punctuation">]</span> c<span class="token punctuation">.</span>b<span class="token punctuation">.</span>c<span class="token punctuation">.</span>m<span class="token punctuation">.</span>c<span class="token punctuation">.</span>c<span class="token punctuation">.</span>MapError<span class="token punctuation">:</span> a size <span class="token number">100</span>
-INFO <span class="token number">33005</span> <span class="token operator">---</span> <span class="token punctuation">[</span>onPool<span class="token operator">-</span>worker<span class="token operator">-</span><span class="token number">4</span><span class="token punctuation">]</span> c<span class="token punctuation">.</span>b<span class="token punctuation">.</span>c<span class="token punctuation">.</span>m<span class="token punctuation">.</span>c<span class="token punctuation">.</span>c<span class="token punctuation">.</span>MapError<span class="token punctuation">:</span> a size <span class="token number">100</span>
-INFO <span class="token number">33005</span> <span class="token operator">---</span> <span class="token punctuation">[</span>onPool<span class="token operator">-</span>worker<span class="token operator">-</span><span class="token number">1</span><span class="token punctuation">]</span> c<span class="token punctuation">.</span>b<span class="token punctuation">.</span>c<span class="token punctuation">.</span>m<span class="token punctuation">.</span>c<span class="token punctuation">.</span>c<span class="token punctuation">.</span>MapError<span class="token punctuation">:</span> a size <span class="token number">100</span>
-INFO <span class="token number">33005</span> <span class="token operator">---</span> <span class="token punctuation">[</span>onPool<span class="token operator">-</span>worker<span class="token operator">-</span><span class="token number">5</span><span class="token punctuation">]</span> c<span class="token punctuation">.</span>b<span class="token punctuation">.</span>c<span class="token punctuation">.</span>m<span class="token punctuation">.</span>c<span class="token punctuation">.</span>c<span class="token punctuation">.</span>MapError<span class="token punctuation">:</span> a size <span class="token number">100</span>
-INFO <span class="token number">33005</span> <span class="token operator">---</span> <span class="token punctuation">[</span>onPool<span class="token operator">-</span>worker<span class="token operator">-</span><span class="token number">6</span><span class="token punctuation">]</span> c<span class="token punctuation">.</span>b<span class="token punctuation">.</span>c<span class="token punctuation">.</span>m<span class="token punctuation">.</span>c<span class="token punctuation">.</span>c<span class="token punctuation">.</span>MapError<span class="token punctuation">:</span> a size <span class="token number">100</span>
-INFO <span class="token number">33005</span> <span class="token operator">---</span> <span class="token punctuation">[</span>onPool<span class="token operator">-</span>worker<span class="token operator">-</span><span class="token number">3</span><span class="token punctuation">]</span> c<span class="token punctuation">.</span>b<span class="token punctuation">.</span>c<span class="token punctuation">.</span>m<span class="token punctuation">.</span>c<span class="token punctuation">.</span>c<span class="token punctuation">.</span>MapError<span class="token punctuation">:</span> a size <span class="token number">100</span>
-INFO <span class="token number">33005</span> <span class="token operator">---</span> <span class="token punctuation">[</span>onPool<span class="token operator">-</span>worker<span class="token operator">-</span><span class="token number">7</span><span class="token punctuation">]</span> c<span class="token punctuation">.</span>b<span class="token punctuation">.</span>c<span class="token punctuation">.</span>m<span class="token punctuation">.</span>c<span class="token punctuation">.</span>c<span class="token punctuation">.</span>MapError<span class="token punctuation">:</span> a size <span class="token number">100</span>
-INFO <span class="token number">33005</span> <span class="token operator">---</span> <span class="token punctuation">[</span>nio<span class="token operator">-</span><span class="token number">8080</span><span class="token operator">-</span>exec<span class="token operator">-</span><span class="token number">1</span><span class="token punctuation">]</span> c<span class="token punctuation">.</span>b<span class="token punctuation">.</span>c<span class="token punctuation">.</span>m<span class="token punctuation">.</span>c<span class="token punctuation">.</span>c<span class="token punctuation">.</span>MapError<span class="token punctuation">:</span> finish Size <span class="token number">1700</span>
+<pre><code class="verilog">INFO 33005 --- [nio-8080-exec-1] c.b.c.m.c.c.MapError: init Size900
+INFO 33005 --- [nio-8080-exec-1] c.b.c.m.c.c.MapError: a size 100
+INFO 33005 --- [onPool-worker-2] c.b.c.m.c.c.MapError: a size 100
+INFO 33005 --- [onPool-worker-4] c.b.c.m.c.c.MapError: a size 100
+INFO 33005 --- [onPool-worker-1] c.b.c.m.c.c.MapError: a size 100
+INFO 33005 --- [onPool-worker-5] c.b.c.m.c.c.MapError: a size 100
+INFO 33005 --- [onPool-worker-6] c.b.c.m.c.c.MapError: a size 100
+INFO 33005 --- [onPool-worker-3] c.b.c.m.c.c.MapError: a size 100
+INFO 33005 --- [onPool-worker-7] c.b.c.m.c.c.MapError: a size 100
+INFO 33005 --- [nio-8080-exec-1] c.b.c.m.c.c.MapError: finish Size 1700
 </code></pre>
 <p>此时得到的1700 并不符合我们所需要的1000的目标值，说明这段代码存在线程不安全的问题。</p>
-<pre class=" language-java"><code class="language-java"> <span class="token annotation punctuation">@GetMapping</span><span class="token punctuation">(</span><span class="token string">"right"</span><span class="token punctuation">)</span>
-    <span class="token keyword">public</span> <span class="token keyword">void</span> <span class="token function">right</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">{</span>
-        ConcurrentHashMap<span class="token operator">&lt;</span>String<span class="token punctuation">,</span>Long<span class="token operator">></span> concurrentHashMap <span class="token operator">=</span> <span class="token function">getData</span><span class="token punctuation">(</span>ITEM_COUNT<span class="token operator">-</span><span class="token number">100</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-        log<span class="token punctuation">.</span><span class="token function">info</span><span class="token punctuation">(</span><span class="token string">"init Size{}"</span><span class="token punctuation">,</span>concurrentHashMap<span class="token punctuation">.</span><span class="token function">size</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-        ForkJoinPool forkJoinPool <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">ForkJoinPool</span><span class="token punctuation">(</span>THREAD_COUNT<span class="token punctuation">)</span><span class="token punctuation">;</span>
-        forkJoinPool<span class="token punctuation">.</span><span class="token function">execute</span><span class="token punctuation">(</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">-</span><span class="token operator">></span> IntStream<span class="token punctuation">.</span><span class="token function">rangeClosed</span><span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">,</span><span class="token number">10</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">parallel</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">forEach</span><span class="token punctuation">(</span>value <span class="token operator">-</span><span class="token operator">></span> <span class="token punctuation">{</span>
-            <span class="token comment" spellcheck="true">//此处进行加锁，但是也丢失了并发的作用</span>
-            <span class="token keyword">synchronized</span> <span class="token punctuation">(</span>concurrentHashMap<span class="token punctuation">)</span><span class="token punctuation">{</span>
-                <span class="token keyword">if</span> <span class="token punctuation">(</span>ITEM_COUNT <span class="token operator">-</span> concurrentHashMap<span class="token punctuation">.</span><span class="token function">size</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token operator">></span><span class="token number">0</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
-                    <span class="token keyword">int</span> a <span class="token operator">=</span> ITEM_COUNT <span class="token operator">-</span> concurrentHashMap<span class="token punctuation">.</span><span class="token function">size</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">;</span>
-                    log<span class="token punctuation">.</span><span class="token function">info</span><span class="token punctuation">(</span><span class="token string">"a size {}"</span><span class="token punctuation">,</span>a<span class="token punctuation">)</span><span class="token punctuation">;</span>
-                    concurrentHashMap<span class="token punctuation">.</span><span class="token function">putAll</span><span class="token punctuation">(</span><span class="token function">getData</span><span class="token punctuation">(</span>a<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-                <span class="token punctuation">}</span>
-            <span class="token punctuation">}</span>
-        <span class="token punctuation">}</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-        forkJoinPool<span class="token punctuation">.</span><span class="token function">shutdown</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-        forkJoinPool<span class="token punctuation">.</span><span class="token function">awaitQuiescence</span><span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">,</span> TimeUnit<span class="token punctuation">.</span>HOURS<span class="token punctuation">)</span><span class="token punctuation">;</span>
-        log<span class="token punctuation">.</span><span class="token function">info</span><span class="token punctuation">(</span><span class="token string">"finish Size {}"</span><span class="token punctuation">,</span>concurrentHashMap<span class="token punctuation">.</span><span class="token function">size</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-    <span class="token punctuation">}</span>
+<pre><code class="java"> @GetMapping(&quot;right&quot;)
+    public void right(){
+        ConcurrentHashMap&lt;String,Long&gt; concurrentHashMap = getData(ITEM_COUNT-100);
+        log.info(&quot;init Size{}&quot;,concurrentHashMap.size());
+        ForkJoinPool forkJoinPool = new ForkJoinPool(THREAD_COUNT);
+        forkJoinPool.execute(() -&gt; IntStream.rangeClosed(1,10).parallel().forEach(value -&gt; {
+            //此处进行加锁，但是也丢失了并发的作用
+            synchronized (concurrentHashMap){
+                if (ITEM_COUNT - concurrentHashMap.size()&gt;0) {
+                    int a = ITEM_COUNT - concurrentHashMap.size() ;
+                    log.info(&quot;a size {}&quot;,a);
+                    concurrentHashMap.putAll(getData(a));
+                }
+            }
+        }));
+        forkJoinPool.shutdown();
+        forkJoinPool.awaitQuiescence(1, TimeUnit.HOURS);
+        log.info(&quot;finish Size {}&quot;,concurrentHashMap.size());
+    }
 </code></pre>
 <p>对<em>concurrentHashMap</em>进行加锁肯定是能够解决问题的，但是这么一来还有必要选择使用<strong>ConcurrentHashMap</strong>？</p>
 <p>直接使用<strong>HashMap</strong>加锁也有同样的效果,说明在此处的<strong>ConcurrentHashMap</strong>是没必要的,是错误理解了它的作用而得到的错误用法。</p>
@@ -505,81 +505,81 @@ INFO <span class="token number">33005</span> <span class="token operator">---</s
 <li><p>假设使用10个并发线程往 Map中写入值，Key的范围是0-9，循环写入1000W次，Value为Key出现的次数</p>
 </li>
 <li><p>一般做法就是直接map进行循环，为了保证不重复初始化Key，这时候为Key的累加加上锁</p>
-<pre class=" language-java"><code class="language-java"> <span class="token keyword">private</span> Map<span class="token operator">&lt;</span>String<span class="token punctuation">,</span> Long<span class="token operator">></span> <span class="token function">normaluse</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token keyword">throws</span> InterruptedException <span class="token punctuation">{</span>
-        Map<span class="token operator">&lt;</span>String<span class="token punctuation">,</span> Long<span class="token operator">></span> freqs <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">HashMap</span><span class="token operator">&lt;</span><span class="token operator">></span><span class="token punctuation">(</span>ITEM_COUNT<span class="token punctuation">)</span><span class="token punctuation">;</span>
-        ForkJoinPool forkJoinPool <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">ForkJoinPool</span><span class="token punctuation">(</span>THREAD_COUNT<span class="token punctuation">)</span><span class="token punctuation">;</span>
-        forkJoinPool<span class="token punctuation">.</span><span class="token function">execute</span><span class="token punctuation">(</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">-</span><span class="token operator">></span> IntStream<span class="token punctuation">.</span><span class="token function">rangeClosed</span><span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">,</span> LOOP_COUNT<span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">parallel</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">forEach</span><span class="token punctuation">(</span>i <span class="token operator">-</span><span class="token operator">></span> <span class="token punctuation">{</span>
-                    <span class="token comment" spellcheck="true">//获得一个随机的Key</span>
-                    String key <span class="token operator">=</span> <span class="token string">"item"</span> <span class="token operator">+</span> ThreadLocalRandom<span class="token punctuation">.</span><span class="token function">current</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">nextInt</span><span class="token punctuation">(</span>ITEM_COUNT<span class="token punctuation">)</span><span class="token punctuation">;</span>
-                    <span class="token keyword">synchronized</span> <span class="token punctuation">(</span>freqs<span class="token punctuation">)</span> <span class="token punctuation">{</span>
-                        <span class="token keyword">if</span> <span class="token punctuation">(</span>freqs<span class="token punctuation">.</span><span class="token function">containsKey</span><span class="token punctuation">(</span>key<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
-                            <span class="token comment" spellcheck="true">//Key存在则+1</span>
-                            freqs<span class="token punctuation">.</span><span class="token function">put</span><span class="token punctuation">(</span>key<span class="token punctuation">,</span> freqs<span class="token punctuation">.</span><span class="token function">get</span><span class="token punctuation">(</span>key<span class="token punctuation">)</span> <span class="token operator">+</span> <span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-                        <span class="token punctuation">}</span> <span class="token keyword">else</span> <span class="token punctuation">{</span>
-                            <span class="token comment" spellcheck="true">//Key不存在则初始化为1</span>
-                            freqs<span class="token punctuation">.</span><span class="token function">put</span><span class="token punctuation">(</span>key<span class="token punctuation">,</span> 1L<span class="token punctuation">)</span><span class="token punctuation">;</span>
-                        <span class="token punctuation">}</span>
-                    <span class="token punctuation">}</span>
-                <span class="token punctuation">}</span>
-        <span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-        forkJoinPool<span class="token punctuation">.</span><span class="token function">shutdown</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-        forkJoinPool<span class="token punctuation">.</span><span class="token function">awaitTermination</span><span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">,</span> TimeUnit<span class="token punctuation">.</span>HOURS<span class="token punctuation">)</span><span class="token punctuation">;</span>
-        <span class="token keyword">return</span> freqs<span class="token punctuation">;</span>
-    <span class="token punctuation">}</span>
+<pre><code class="java"> private Map&lt;String, Long&gt; normaluse() throws InterruptedException {
+        Map&lt;String, Long&gt; freqs = new HashMap&lt;&gt;(ITEM_COUNT);
+        ForkJoinPool forkJoinPool = new ForkJoinPool(THREAD_COUNT);
+        forkJoinPool.execute(() -&gt; IntStream.rangeClosed(1, LOOP_COUNT).parallel().forEach(i -&gt; {
+                    //获得一个随机的Key
+                    String key = &quot;item&quot; + ThreadLocalRandom.current().nextInt(ITEM_COUNT);
+                    synchronized (freqs) {
+                        if (freqs.containsKey(key)) {
+                            //Key存在则+1
+                            freqs.put(key, freqs.get(key) + 1);
+                        } else {
+                            //Key不存在则初始化为1
+                            freqs.put(key, 1L);
+                        }
+                    }
+                }
+        ));
+        forkJoinPool.shutdown();
+        forkJoinPool.awaitTermination(1, TimeUnit.HOURS);
+        return freqs;
+    }
 </code></pre>
 </li>
 <li><p>第二种做法就是使用ConcurrentHashMap 内置的 conputeIfAbsent 方法进行增加</p>
-<pre class=" language-java"><code class="language-java"> <span class="token keyword">private</span> Map<span class="token operator">&lt;</span>String<span class="token punctuation">,</span> Long<span class="token operator">></span> <span class="token function">gooduse</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token keyword">throws</span> InterruptedException <span class="token punctuation">{</span>
-        ConcurrentHashMap<span class="token operator">&lt;</span>String<span class="token punctuation">,</span> LongAdder<span class="token operator">></span> freqs <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">ConcurrentHashMap</span><span class="token operator">&lt;</span><span class="token operator">></span><span class="token punctuation">(</span>ITEM_COUNT<span class="token punctuation">)</span><span class="token punctuation">;</span>
-        ForkJoinPool forkJoinPool <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">ForkJoinPool</span><span class="token punctuation">(</span>THREAD_COUNT<span class="token punctuation">)</span><span class="token punctuation">;</span>
-        forkJoinPool<span class="token punctuation">.</span><span class="token function">execute</span><span class="token punctuation">(</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">-</span><span class="token operator">></span> IntStream<span class="token punctuation">.</span><span class="token function">rangeClosed</span><span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">,</span> LOOP_COUNT<span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">parallel</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">forEach</span><span class="token punctuation">(</span>i <span class="token operator">-</span><span class="token operator">></span> <span class="token punctuation">{</span>
-                    String key <span class="token operator">=</span> <span class="token string">"item"</span> <span class="token operator">+</span> ThreadLocalRandom<span class="token punctuation">.</span><span class="token function">current</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">nextInt</span><span class="token punctuation">(</span>ITEM_COUNT<span class="token punctuation">)</span><span class="token punctuation">;</span>
-                    <span class="token comment" spellcheck="true">//利用computeIfAbsent()方法来实例化LongAdder，然后利用LongAdder来进行线程安全计数</span>
-                    freqs<span class="token punctuation">.</span><span class="token function">computeIfAbsent</span><span class="token punctuation">(</span>key<span class="token punctuation">,</span> k <span class="token operator">-</span><span class="token operator">></span> <span class="token keyword">new</span> <span class="token class-name">LongAdder</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">increment</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-                <span class="token punctuation">}</span>
-        <span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-        forkJoinPool<span class="token punctuation">.</span><span class="token function">shutdown</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-        forkJoinPool<span class="token punctuation">.</span><span class="token function">awaitTermination</span><span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">,</span> TimeUnit<span class="token punctuation">.</span>HOURS<span class="token punctuation">)</span><span class="token punctuation">;</span>
-        <span class="token comment" spellcheck="true">//因为我们的Value是LongAdder而不是Long，所以需要做一次转换才能返回</span>
-        <span class="token keyword">return</span> freqs<span class="token punctuation">.</span><span class="token function">entrySet</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">stream</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
-                <span class="token punctuation">.</span><span class="token function">collect</span><span class="token punctuation">(</span>Collectors<span class="token punctuation">.</span><span class="token function">toMap</span><span class="token punctuation">(</span>
-                        Map<span class="token punctuation">.</span>Entry<span class="token operator">:</span><span class="token operator">:</span>getKey<span class="token punctuation">,</span>
-                        e <span class="token operator">-</span><span class="token operator">></span> e<span class="token punctuation">.</span><span class="token function">getValue</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">longValue</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
-                <span class="token punctuation">)</span><span class="token punctuation">;</span>
-    <span class="token punctuation">}</span>
+<pre><code class="java"> private Map&lt;String, Long&gt; gooduse() throws InterruptedException {
+        ConcurrentHashMap&lt;String, LongAdder&gt; freqs = new ConcurrentHashMap&lt;&gt;(ITEM_COUNT);
+        ForkJoinPool forkJoinPool = new ForkJoinPool(THREAD_COUNT);
+        forkJoinPool.execute(() -&gt; IntStream.rangeClosed(1, LOOP_COUNT).parallel().forEach(i -&gt; {
+                    String key = &quot;item&quot; + ThreadLocalRandom.current().nextInt(ITEM_COUNT);
+                    //利用computeIfAbsent()方法来实例化LongAdder，然后利用LongAdder来进行线程安全计数
+                    freqs.computeIfAbsent(key, k -&gt; new LongAdder()).increment();
+                }
+        ));
+        forkJoinPool.shutdown();
+        forkJoinPool.awaitTermination(1, TimeUnit.HOURS);
+        //因为我们的Value是LongAdder而不是Long，所以需要做一次转换才能返回
+        return freqs.entrySet().stream()
+                .collect(Collectors.toMap(
+                        Map.Entry::getKey,
+                        e -&gt; e.getValue().longValue())
+                );
+    }
 </code></pre>
 </li>
 <li><p>这两种做法都能满足我们统计的需求，我们通过<em>StopWatch</em> 来对两个方式的速度进行统计</p>
-<pre class=" language-java"><code class="language-java"> <span class="token annotation punctuation">@GetMapping</span><span class="token punctuation">(</span><span class="token string">"/compare"</span><span class="token punctuation">)</span>
-    <span class="token keyword">public</span> <span class="token keyword">void</span> <span class="token function">compareTime</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token keyword">throws</span> InterruptedException <span class="token punctuation">{</span>
+<pre><code class="java"> @GetMapping(&quot;/compare&quot;)
+    public void compareTime() throws InterruptedException {
 
-        StopWatch stopWatch <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">StopWatch</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-        stopWatch<span class="token punctuation">.</span><span class="token function">start</span><span class="token punctuation">(</span><span class="token string">"goodUse"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-        Map<span class="token operator">&lt;</span>String<span class="token punctuation">,</span> Long<span class="token operator">></span> goodUse <span class="token operator">=</span> <span class="token function">goodUse</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-        stopWatch<span class="token punctuation">.</span><span class="token function">stop</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-        Assert<span class="token punctuation">.</span><span class="token function">isTrue</span><span class="token punctuation">(</span>goodUse<span class="token punctuation">.</span><span class="token function">size</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">==</span> ITEM_COUNT<span class="token punctuation">,</span><span class="token string">"goodUse count Err"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-        Assert<span class="token punctuation">.</span><span class="token function">isTrue</span><span class="token punctuation">(</span>goodUse<span class="token punctuation">.</span><span class="token function">values</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">stream</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
-                <span class="token punctuation">.</span><span class="token function">mapToLong</span><span class="token punctuation">(</span>value <span class="token operator">-</span><span class="token operator">></span> value<span class="token punctuation">)</span>
-                <span class="token punctuation">.</span><span class="token function">reduce</span><span class="token punctuation">(</span><span class="token number">0</span><span class="token punctuation">,</span>Long<span class="token operator">:</span><span class="token operator">:</span>sum<span class="token punctuation">)</span><span class="token operator">==</span>LOOP_COUNT<span class="token punctuation">,</span><span class="token string">"goodUse count Err"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        StopWatch stopWatch = new StopWatch();
+        stopWatch.start(&quot;goodUse&quot;);
+        Map&lt;String, Long&gt; goodUse = goodUse();
+        stopWatch.stop();
+        Assert.isTrue(goodUse.size() == ITEM_COUNT,&quot;goodUse count Err&quot;);
+        Assert.isTrue(goodUse.values().stream()
+                .mapToLong(value -&gt; value)
+                .reduce(0,Long::sum)==LOOP_COUNT,&quot;goodUse count Err&quot;);
 
-        stopWatch<span class="token punctuation">.</span><span class="token function">start</span><span class="token punctuation">(</span><span class="token string">"normalUse"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-        Map<span class="token operator">&lt;</span>String<span class="token punctuation">,</span> Long<span class="token operator">></span> normalUse <span class="token operator">=</span> <span class="token function">normalUse</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-        stopWatch<span class="token punctuation">.</span><span class="token function">stop</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-        Assert<span class="token punctuation">.</span><span class="token function">isTrue</span><span class="token punctuation">(</span>normalUse<span class="token punctuation">.</span><span class="token function">size</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">==</span> ITEM_COUNT<span class="token punctuation">,</span><span class="token string">"normalUse count Err"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-        Assert<span class="token punctuation">.</span><span class="token function">isTrue</span><span class="token punctuation">(</span>normalUse<span class="token punctuation">.</span><span class="token function">values</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">stream</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
-                <span class="token punctuation">.</span><span class="token function">mapToLong</span><span class="token punctuation">(</span>value <span class="token operator">-</span><span class="token operator">></span> value<span class="token punctuation">)</span>
-                <span class="token punctuation">.</span><span class="token function">reduce</span><span class="token punctuation">(</span><span class="token number">0</span><span class="token punctuation">,</span>Long<span class="token operator">:</span><span class="token operator">:</span>sum<span class="token punctuation">)</span><span class="token operator">==</span>LOOP_COUNT<span class="token punctuation">,</span><span class="token string">"normalUse count Err"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        stopWatch.start(&quot;normalUse&quot;);
+        Map&lt;String, Long&gt; normalUse = normalUse();
+        stopWatch.stop();
+        Assert.isTrue(normalUse.size() == ITEM_COUNT,&quot;normalUse count Err&quot;);
+        Assert.isTrue(normalUse.values().stream()
+                .mapToLong(value -&gt; value)
+                .reduce(0,Long::sum)==LOOP_COUNT,&quot;normalUse count Err&quot;);
 
-        log<span class="token punctuation">.</span><span class="token function">info</span><span class="token punctuation">(</span>stopWatch<span class="token punctuation">.</span><span class="token function">prettyPrint</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+        log.info(stopWatch.prettyPrint());
 
-    <span class="token punctuation">}</span>    
+    }    
 </code></pre>
-<pre class=" language-verilog"><code class="language-verilog">StopWatch ''<span class="token punctuation">:</span> running <span class="token keyword">time</span> <span class="token operator">=</span> <span class="token number">17247637770</span> ns
-<span class="token operator">---------------------------------------------</span>
-ns         <span class="token operator">%</span>     Task name
-<span class="token operator">---------------------------------------------</span>
-<span class="token number">1860003595</span>  <span class="token number">011</span><span class="token operator">%</span>  goodUse
-<span class="token number">15387634175</span>  <span class="token number">089</span><span class="token operator">%</span>  normalUse
+<pre><code class="verilog">StopWatch &#39;&#39;: running time = 17247637770 ns
+---------------------------------------------
+ns         %     Task name
+---------------------------------------------
+1860003595  011%  goodUse
+15387634175  089%  normalUse
 </code></pre>
 <p>由日志可知，两者时间上的差距将近9倍。</p>
 </li>
@@ -602,97 +602,97 @@ ns         <span class="token operator">%</span>     Task name
 <li><p>如果我们要使用 CopyOnWriteArrayList，那一定是因为场景需要而不是因为足够酷炫。如果读写比例均衡或者有大量写操作的话，使用 CopyOnWriteArrayList 的性能会非常糟糕。</p>
 </li>
 <li><p>我们写一段测试代码，来比较下使用 CopyOnWriteArrayList 和普通加锁方式 ArrayList 的读写性能吧。在这段代码中我们针对并发读和并发写分别写了一个测试方法，测试两者一定次数的写或读操作的耗时。</p>
-<pre class=" language-java"><code class="language-java"> <span class="token comment" spellcheck="true">//测试并发写的性能</span>
-    <span class="token annotation punctuation">@GetMapping</span><span class="token punctuation">(</span><span class="token string">"write"</span><span class="token punctuation">)</span>
-    <span class="token keyword">public</span> Map <span class="token function">testWrite</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
-        List<span class="token operator">&lt;</span>Integer<span class="token operator">></span> copyOnWriteArrayList <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">CopyOnWriteArrayList</span><span class="token operator">&lt;</span><span class="token operator">></span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-        List<span class="token operator">&lt;</span>Integer<span class="token operator">></span> synchronizedList <span class="token operator">=</span> Collections<span class="token punctuation">.</span><span class="token function">synchronizedList</span><span class="token punctuation">(</span><span class="token keyword">new</span> <span class="token class-name">ArrayList</span><span class="token operator">&lt;</span><span class="token operator">></span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-        StopWatch stopWatch <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">StopWatch</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-        <span class="token keyword">int</span> loopCount <span class="token operator">=</span> <span class="token number">100000</span><span class="token punctuation">;</span>
-        stopWatch<span class="token punctuation">.</span><span class="token function">start</span><span class="token punctuation">(</span><span class="token string">"Write:copyOnWriteArrayList"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-        <span class="token comment" spellcheck="true">//循环100000次并发往CopyOnWriteArrayList写入随机元素</span>
-        IntStream<span class="token punctuation">.</span><span class="token function">rangeClosed</span><span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">,</span> loopCount<span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">parallel</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">forEach</span><span class="token punctuation">(</span>i <span class="token operator">-</span><span class="token operator">></span> copyOnWriteArrayList<span class="token punctuation">.</span><span class="token function">add</span><span class="token punctuation">(</span>ThreadLocalRandom<span class="token punctuation">.</span><span class="token function">current</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">nextInt</span><span class="token punctuation">(</span>loopCount<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-        stopWatch<span class="token punctuation">.</span><span class="token function">stop</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-        stopWatch<span class="token punctuation">.</span><span class="token function">start</span><span class="token punctuation">(</span><span class="token string">"Write:synchronizedList"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-        <span class="token comment" spellcheck="true">//循环100000次并发往加锁的ArrayList写入随机元素</span>
-        IntStream<span class="token punctuation">.</span><span class="token function">rangeClosed</span><span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">,</span> loopCount<span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">parallel</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">forEach</span><span class="token punctuation">(</span>i <span class="token operator">-</span><span class="token operator">></span> synchronizedList<span class="token punctuation">.</span><span class="token function">add</span><span class="token punctuation">(</span>ThreadLocalRandom<span class="token punctuation">.</span><span class="token function">current</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">nextInt</span><span class="token punctuation">(</span>loopCount<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-        stopWatch<span class="token punctuation">.</span><span class="token function">stop</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-        log<span class="token punctuation">.</span><span class="token function">info</span><span class="token punctuation">(</span>stopWatch<span class="token punctuation">.</span><span class="token function">prettyPrint</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-        Map result <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">HashMap</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-        result<span class="token punctuation">.</span><span class="token function">put</span><span class="token punctuation">(</span><span class="token string">"copyOnWriteArrayList"</span><span class="token punctuation">,</span> copyOnWriteArrayList<span class="token punctuation">.</span><span class="token function">size</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-        result<span class="token punctuation">.</span><span class="token function">put</span><span class="token punctuation">(</span><span class="token string">"synchronizedList"</span><span class="token punctuation">,</span> synchronizedList<span class="token punctuation">.</span><span class="token function">size</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-        <span class="token keyword">return</span> result<span class="token punctuation">;</span>
-    <span class="token punctuation">}</span>
+<pre><code class="java"> //测试并发写的性能
+    @GetMapping(&quot;write&quot;)
+    public Map testWrite() {
+        List&lt;Integer&gt; copyOnWriteArrayList = new CopyOnWriteArrayList&lt;&gt;();
+        List&lt;Integer&gt; synchronizedList = Collections.synchronizedList(new ArrayList&lt;&gt;());
+        StopWatch stopWatch = new StopWatch();
+        int loopCount = 100000;
+        stopWatch.start(&quot;Write:copyOnWriteArrayList&quot;);
+        //循环100000次并发往CopyOnWriteArrayList写入随机元素
+        IntStream.rangeClosed(1, loopCount).parallel().forEach(i -&gt; copyOnWriteArrayList.add(ThreadLocalRandom.current().nextInt(loopCount)));
+        stopWatch.stop();
+        stopWatch.start(&quot;Write:synchronizedList&quot;);
+        //循环100000次并发往加锁的ArrayList写入随机元素
+        IntStream.rangeClosed(1, loopCount).parallel().forEach(i -&gt; synchronizedList.add(ThreadLocalRandom.current().nextInt(loopCount)));
+        stopWatch.stop();
+        log.info(stopWatch.prettyPrint());
+        Map result = new HashMap();
+        result.put(&quot;copyOnWriteArrayList&quot;, copyOnWriteArrayList.size());
+        result.put(&quot;synchronizedList&quot;, synchronizedList.size());
+        return result;
+    }
 
-    <span class="token comment" spellcheck="true">//帮助方法用来填充List</span>
-    <span class="token keyword">private</span> <span class="token keyword">void</span> <span class="token function">addAll</span><span class="token punctuation">(</span>List<span class="token operator">&lt;</span>Integer<span class="token operator">></span> list<span class="token punctuation">)</span> <span class="token punctuation">{</span>
-        list<span class="token punctuation">.</span><span class="token function">addAll</span><span class="token punctuation">(</span>IntStream<span class="token punctuation">.</span><span class="token function">rangeClosed</span><span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">,</span> <span class="token number">1000000</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">boxed</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">collect</span><span class="token punctuation">(</span>Collectors<span class="token punctuation">.</span><span class="token function">toList</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-    <span class="token punctuation">}</span>
+    //帮助方法用来填充List
+    private void addAll(List&lt;Integer&gt; list) {
+        list.addAll(IntStream.rangeClosed(1, 1000000).boxed().collect(Collectors.toList()));
+    }
 
-    <span class="token comment" spellcheck="true">//测试并发读的性能</span>
-    <span class="token annotation punctuation">@GetMapping</span><span class="token punctuation">(</span><span class="token string">"read"</span><span class="token punctuation">)</span>
-    <span class="token keyword">public</span> Map <span class="token function">testRead</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>
-        <span class="token comment" spellcheck="true">//创建两个测试对象</span>
-        List<span class="token operator">&lt;</span>Integer<span class="token operator">></span> copyOnWriteArrayList <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">CopyOnWriteArrayList</span><span class="token operator">&lt;</span><span class="token operator">></span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-        List<span class="token operator">&lt;</span>Integer<span class="token operator">></span> synchronizedList <span class="token operator">=</span> Collections<span class="token punctuation">.</span><span class="token function">synchronizedList</span><span class="token punctuation">(</span><span class="token keyword">new</span> <span class="token class-name">ArrayList</span><span class="token operator">&lt;</span><span class="token operator">></span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-        <span class="token comment" spellcheck="true">//填充数据</span>
-        <span class="token function">addAll</span><span class="token punctuation">(</span>copyOnWriteArrayList<span class="token punctuation">)</span><span class="token punctuation">;</span>
-        <span class="token function">addAll</span><span class="token punctuation">(</span>synchronizedList<span class="token punctuation">)</span><span class="token punctuation">;</span>
-        StopWatch stopWatch <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">StopWatch</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-        <span class="token keyword">int</span> loopCount <span class="token operator">=</span> <span class="token number">1000000</span><span class="token punctuation">;</span>
-        <span class="token keyword">int</span> count <span class="token operator">=</span> copyOnWriteArrayList<span class="token punctuation">.</span><span class="token function">size</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-        stopWatch<span class="token punctuation">.</span><span class="token function">start</span><span class="token punctuation">(</span><span class="token string">"Read:copyOnWriteArrayList"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-        <span class="token comment" spellcheck="true">//循环1000000次并发从CopyOnWriteArrayList随机查询元素</span>
-        IntStream<span class="token punctuation">.</span><span class="token function">rangeClosed</span><span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">,</span> loopCount<span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">parallel</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">forEach</span><span class="token punctuation">(</span>i <span class="token operator">-</span><span class="token operator">></span> copyOnWriteArrayList<span class="token punctuation">.</span><span class="token function">get</span><span class="token punctuation">(</span>ThreadLocalRandom<span class="token punctuation">.</span><span class="token function">current</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">nextInt</span><span class="token punctuation">(</span>count<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-        stopWatch<span class="token punctuation">.</span><span class="token function">stop</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-        stopWatch<span class="token punctuation">.</span><span class="token function">start</span><span class="token punctuation">(</span><span class="token string">"Read:synchronizedList"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-        <span class="token comment" spellcheck="true">//循环1000000次并发从加锁的ArrayList随机查询元素</span>
-        IntStream<span class="token punctuation">.</span><span class="token function">range</span><span class="token punctuation">(</span><span class="token number">0</span><span class="token punctuation">,</span> loopCount<span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">parallel</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">forEach</span><span class="token punctuation">(</span>i <span class="token operator">-</span><span class="token operator">></span> synchronizedList<span class="token punctuation">.</span><span class="token function">get</span><span class="token punctuation">(</span>ThreadLocalRandom<span class="token punctuation">.</span><span class="token function">current</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">nextInt</span><span class="token punctuation">(</span>count<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-        stopWatch<span class="token punctuation">.</span><span class="token function">stop</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-        log<span class="token punctuation">.</span><span class="token function">info</span><span class="token punctuation">(</span>stopWatch<span class="token punctuation">.</span><span class="token function">prettyPrint</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-        Map result <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">HashMap</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-        result<span class="token punctuation">.</span><span class="token function">put</span><span class="token punctuation">(</span><span class="token string">"copyOnWriteArrayList"</span><span class="token punctuation">,</span> copyOnWriteArrayList<span class="token punctuation">.</span><span class="token function">size</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-        result<span class="token punctuation">.</span><span class="token function">put</span><span class="token punctuation">(</span><span class="token string">"synchronizedList"</span><span class="token punctuation">,</span> synchronizedList<span class="token punctuation">.</span><span class="token function">size</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-        <span class="token keyword">return</span> result<span class="token punctuation">;</span>
-    <span class="token punctuation">}</span>
+    //测试并发读的性能
+    @GetMapping(&quot;read&quot;)
+    public Map testRead() {
+        //创建两个测试对象
+        List&lt;Integer&gt; copyOnWriteArrayList = new CopyOnWriteArrayList&lt;&gt;();
+        List&lt;Integer&gt; synchronizedList = Collections.synchronizedList(new ArrayList&lt;&gt;());
+        //填充数据
+        addAll(copyOnWriteArrayList);
+        addAll(synchronizedList);
+        StopWatch stopWatch = new StopWatch();
+        int loopCount = 1000000;
+        int count = copyOnWriteArrayList.size();
+        stopWatch.start(&quot;Read:copyOnWriteArrayList&quot;);
+        //循环1000000次并发从CopyOnWriteArrayList随机查询元素
+        IntStream.rangeClosed(1, loopCount).parallel().forEach(i -&gt; copyOnWriteArrayList.get(ThreadLocalRandom.current().nextInt(count)));
+        stopWatch.stop();
+        stopWatch.start(&quot;Read:synchronizedList&quot;);
+        //循环1000000次并发从加锁的ArrayList随机查询元素
+        IntStream.range(0, loopCount).parallel().forEach(i -&gt; synchronizedList.get(ThreadLocalRandom.current().nextInt(count)));
+        stopWatch.stop();
+        log.info(stopWatch.prettyPrint());
+        Map result = new HashMap();
+        result.put(&quot;copyOnWriteArrayList&quot;, copyOnWriteArrayList.size());
+        result.put(&quot;synchronizedList&quot;, synchronizedList.size());
+        return result;
+    }
 </code></pre>
 </li>
 </ul>
 <ul>
 <li><p>运行程序可以看到，大量写的场景（10 万次 add 操作），CopyOnWriteArray 几乎比同步的 ArrayList 慢一百倍：</p>
-<pre class=" language-verilog"><code class="language-verilog">StopWatch ''<span class="token punctuation">:</span> running <span class="token keyword">time</span> <span class="token operator">=</span> <span class="token number">4207613566</span> ns
-<span class="token operator">---------------------------------------------</span>
-ns         <span class="token operator">%</span>     Task name
-<span class="token operator">---------------------------------------------</span>
-<span class="token number">4117309161</span>  <span class="token number">098</span><span class="token operator">%</span>  Write<span class="token punctuation">:</span>copyOnWriteArrayList
-<span class="token number">090304405</span>  <span class="token number">002</span><span class="token operator">%</span>  Write<span class="token punctuation">:</span>synchronizedList
+<pre><code class="verilog">StopWatch &#39;&#39;: running time = 4207613566 ns
+---------------------------------------------
+ns         %     Task name
+---------------------------------------------
+4117309161  098%  Write:copyOnWriteArrayList
+090304405  002%  Write:synchronizedList
 </code></pre>
 </li>
 <li><p>而在大量读的场景下（100 万次 get 操作），CopyOnWriteArray 又比同步的 ArrayList 快十倍以上</p>
-<pre class=" language-verilog"><code class="language-verilog">StopWatch ''<span class="token punctuation">:</span> running <span class="token keyword">time</span> <span class="token operator">=</span> <span class="token number">416496271</span> ns
-<span class="token operator">---------------------------------------------</span>
-ns         <span class="token operator">%</span>     Task name
-<span class="token operator">---------------------------------------------</span>
-<span class="token number">028776967</span>  <span class="token number">007</span><span class="token operator">%</span>  Read<span class="token punctuation">:</span>copyOnWriteArrayList
-<span class="token number">387719304</span>  <span class="token number">093</span><span class="token operator">%</span>  Read<span class="token punctuation">:</span>synchronizedList
+<pre><code class="verilog">StopWatch &#39;&#39;: running time = 416496271 ns
+---------------------------------------------
+ns         %     Task name
+---------------------------------------------
+028776967  007%  Read:copyOnWriteArrayList
+387719304  093%  Read:synchronizedList
 </code></pre>
 <p>以 add 方法为例，每次 add 时，都会用 Arrays.copyOf 创建一个新数组，频繁 add 时内存的申请释放消耗会很大：</p>
-<pre class=" language-java"><code class="language-java">    <span class="token comment" spellcheck="true">/**
+<pre><code class="java">    /**
      * Appends the specified element to the end of this list.
      *
      * @param e element to be appended to this list
      * @return {@code true} (as specified by {@link Collection#add})
-     */</span>
-    <span class="token keyword">public</span> <span class="token keyword">boolean</span> <span class="token function">add</span><span class="token punctuation">(</span>E e<span class="token punctuation">)</span> <span class="token punctuation">{</span>
-        <span class="token keyword">synchronized</span> <span class="token punctuation">(</span>lock<span class="token punctuation">)</span> <span class="token punctuation">{</span>
-            Object<span class="token punctuation">[</span><span class="token punctuation">]</span> elements <span class="token operator">=</span> <span class="token function">getArray</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-            <span class="token keyword">int</span> len <span class="token operator">=</span> elements<span class="token punctuation">.</span>length<span class="token punctuation">;</span>
-            Object<span class="token punctuation">[</span><span class="token punctuation">]</span> newElements <span class="token operator">=</span> Arrays<span class="token punctuation">.</span><span class="token function">copyOf</span><span class="token punctuation">(</span>elements<span class="token punctuation">,</span> len <span class="token operator">+</span> <span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-            newElements<span class="token punctuation">[</span>len<span class="token punctuation">]</span> <span class="token operator">=</span> e<span class="token punctuation">;</span>
-            <span class="token function">setArray</span><span class="token punctuation">(</span>newElements<span class="token punctuation">)</span><span class="token punctuation">;</span>
-            <span class="token keyword">return</span> <span class="token boolean">true</span><span class="token punctuation">;</span>
-        <span class="token punctuation">}</span>
-    <span class="token punctuation">}</span>    
+     */
+    public boolean add(E e) {
+        synchronized (lock) {
+            Object[] elements = getArray();
+            int len = elements.length;
+            Object[] newElements = Arrays.copyOf(elements, len + 1);
+            newElements[len] = e;
+            setArray(newElements);
+            return true;
+        }
+    }    
 </code></pre>
 <p>get方法则相反，因为在读取的时候CopyOnWriteArray不需要加锁，所以总体开销是比加锁的ArrayList低的。</p>
 </li>
